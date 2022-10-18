@@ -62,6 +62,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       "apt-cache policy docker-ce",
       "sudo apt install docker-ce",
       "sudo systemctl status docker",
+      "sudo systemctl enable docker", 
       "sudo usermod -aG docker ${USER}",
       "su - ${USER}",
       "docker run --publish 80:80 --detach nginx"
