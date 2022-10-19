@@ -67,6 +67,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       machineImage: instanceAMI,
       securityGroup: SecurityGroup,
 
+      // can we change deviceName to '/home/ubuntu' ?
       blockDevices: [
         {
           deviceName: '/dev/sdf',
