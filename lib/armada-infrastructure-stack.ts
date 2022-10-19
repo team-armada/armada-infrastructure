@@ -2,7 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecr from 'aws-cdk-lib/aws-ecr'
-import { SecurityGroup } from 'aws-cdk-lib/aws-ec2';
+import { readFileSync } from 'fs';
 
 export class ArmadaInfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -51,38 +51,18 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       'HTTPS Access'
     );
 
-    // user data
-    const userData = ec2.UserData.forLinux();
-    const dockerCommands = [
-      "sudo apt update",
-      "sudo apt install apt-transport-https ca-certificates curl software-properties-common",
-      "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg",
-      'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null',
-      "sudo apt update",
-      "apt-cache policy docker-ce",
-      "sudo apt install docker-ce",
-      "sudo systemctl status docker",
-      "sudo systemctl enable docker", 
-      "sudo usermod -aG docker ${USER}",
-      "su - ${USER}",
-      "docker run --publish 80:80 --detach nginx"
-    ]
-  
-    userData.addCommands(...dockerCommands)
-
     // TODO: get AMI ID from SSM param store to get portable deployments
     const latestUbuntuImageURL = "/aws/service/canonical/ubuntu/server/focal/stable/current/amd64/hvm/ebs-gp2/ami-id";
     const instanceAMI = ec2.MachineImage.fromSsmParameter(
       latestUbuntuImageURL, {
         os: ec2.OperatingSystemType.LINUX,
-        userData: userData
       }
     );
 
     // EC2 instance
-    new ec2.Instance(this, 'Instance', {
+    const ec2Instance = new ec2.Instance(this, 'Instance', {
       vpc: vpc,
-      keyName: 'kp-us-east-1', 
+      keyName: 'kp-us-east-1', // TODO: add to environment variable
       instanceType: new ec2.InstanceType('t2.micro'),
       machineImage: instanceAMI,
       securityGroup: SecurityGroup,
@@ -97,7 +77,13 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       ]
     })
 
-    // Elastic Container Registry
+    // Load Script with User Data
+    const userDataScript = readFileSync('./lib/user-data.sh', 'utf8');
+
+    // Add Script to the Instance
+    ec2Instance.addUserData(userDataScript)
+
+    // Elastic Container Registry (ECR)
     const repository = new ecr.Repository(this, 'Repository')
   }
 }
