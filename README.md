@@ -38,7 +38,7 @@ cdk bootstrap
 ```
 
 ### Deploy Infrastructure
-```
+```sh
 cdk deploy
 ```
 
