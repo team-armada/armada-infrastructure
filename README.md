@@ -23,14 +23,27 @@
 
 ---
 
-# Welcome to your CDK TypeScript project
+## Running the 
 
-This is a blank project for CDK development with TypeScript.
+> NOTE: You should have an AWS user with admin permissions. 
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+### Install CDK 
+```sh
+npm install -g aws-cdk
+```
 
-## Useful commands
+### Install CDK 
+```sh
+cdk bootstrap 
+```
 
+### Deploy Infrastructure
+```
+cdk deploy
+```
+
+
+### Useful commands
 * `npm run build`   compile typescript to js
 * `npm run watch`   watch for changes and compile
 * `npm run test`    perform the jest unit tests

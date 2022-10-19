@@ -60,9 +60,10 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     );
 
     // EC2 instance
+    const keyName = 'kp-us-east-1'; 
     const ec2Instance = new ec2.Instance(this, 'Instance', {
       vpc: vpc,
-      keyName: 'kp-us-east-1', // TODO: add to environment variable
+      keyName: keyName, 
       instanceType: new ec2.InstanceType('t2.micro'),
       machineImage: instanceAMI,
       securityGroup: SecurityGroup,
@@ -70,6 +71,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       blockDevices: [
         {
           deviceName: '/dev/sdf',
+
           volume: ec2.BlockDeviceVolume.ebs(8, {
             volumeType: ec2.EbsDeviceVolumeType.GENERAL_PURPOSE_SSD_GP3
           })
