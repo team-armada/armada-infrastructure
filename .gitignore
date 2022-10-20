@@ -9,3 +9,6 @@ cdk.out
 
 # Mac Files
 .DS_Store
+
+# Package Lock
+package-lock.json
