@@ -1,4 +1,3 @@
-import { readFileSync } from 'fs';
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
@@ -66,33 +65,6 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
         os: ec2.OperatingSystemType.LINUX,
       }
     );
-
-    // EC2 instance
-    const keyName = 'kp-us-east-1';
-    const ec2Instance = new ec2.Instance(this, 'Instance', {
-      vpc,
-      keyName,
-      instanceType: new ec2.InstanceType('t2.micro'),
-      machineImage: instanceAMI,
-      securityGroup: SecurityGroup,
-
-      // can we change deviceName to '/home/ubuntu' ?
-      blockDevices: [
-        {
-          deviceName: '/dev/sdf',
-
-          volume: ec2.BlockDeviceVolume.ebs(8, {
-            volumeType: ec2.EbsDeviceVolumeType.GENERAL_PURPOSE_SSD_GP3,
-          }),
-        },
-      ],
-    });
-
-    // Load Script with User Data
-    const userDataScript = readFileSync('./lib/user-data.sh', 'utf8');
-
-    // Add Script to the Instance
-    ec2Instance.addUserData(userDataScript);
 
     // Elastic Container Registry (ECR)
     const repository = new ecr.Repository(this, 'Repository');
