@@ -82,36 +82,5 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     );
 
     clusterInstance.addSecurityGroup(SecurityGroup);
-
-    // Add a new task
-    const taskDefinition = new ecs.Ec2TaskDefinition(this, 'SetUpCodeServer');
-
-    const clusterContainer = taskDefinition.addContainer('DefaultContainer', {
-      image: ecs.ContainerImage.fromRegistry(
-        'jdguillaume/base-code-server-no-auth'
-      ),
-      memoryLimitMiB: 512,
-    });
-
-    clusterContainer.addPortMappings({
-      containerPort: 8080,
-      hostPort: 8080,
-      protocol: ecs.Protocol.TCP,
-    });
-
-    // Attempting to automate the running of the task.
-
-    // const runTask = new cdk.aws_stepfunctions_tasks.EcsRunTask(this, 'Run', {
-    //   integrationPattern: cdk.aws_stepfunctions.IntegrationPattern.RUN_JOB,
-    //   cluster,
-    //   taskDefinition,
-    //   launchTarget: new cdk.aws_stepfunctions_tasks.EcsEc2LaunchTarget({
-    //     placementStrategies: [
-    //       ecs.PlacementStrategy.spreadAcrossInstances(),
-    //       ecs.PlacementStrategy.packedByCpu(),
-    //       ecs.PlacementStrategy.randomly(),
-    //     ],
-    //   }),
-    // });
   }
 }
