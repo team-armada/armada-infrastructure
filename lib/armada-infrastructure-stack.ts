@@ -1,4 +1,3 @@
-import { readFileSync } from 'fs';
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
@@ -67,33 +66,6 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       }
     );
 
-    // EC2 instance
-    const keyName = 'kp-us-east-1';
-    const ec2Instance = new ec2.Instance(this, 'Instance', {
-      vpc,
-      keyName,
-      instanceType: new ec2.InstanceType('t2.micro'),
-      machineImage: instanceAMI,
-      securityGroup: SecurityGroup,
-
-      // can we change deviceName to '/home/ubuntu' ?
-      blockDevices: [
-        {
-          deviceName: '/dev/sdf',
-
-          volume: ec2.BlockDeviceVolume.ebs(8, {
-            volumeType: ec2.EbsDeviceVolumeType.GENERAL_PURPOSE_SSD_GP3,
-          }),
-        },
-      ],
-    });
-
-    // Load Script with User Data
-    const userDataScript = readFileSync('./lib/user-data.sh', 'utf8');
-
-    // Add Script to the Instance
-    ec2Instance.addUserData(userDataScript);
-
     // Elastic Container Registry (ECR)
     const repository = new ecr.Repository(this, 'Repository');
 
@@ -110,36 +82,5 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     );
 
     clusterInstance.addSecurityGroup(SecurityGroup);
-
-    // Add a new task
-    const taskDefinition = new ecs.Ec2TaskDefinition(this, 'SetUpCodeServer');
-
-    const clusterContainer = taskDefinition.addContainer('DefaultContainer', {
-      image: ecs.ContainerImage.fromRegistry(
-        'jdguillaume/base-code-server-no-auth'
-      ),
-      memoryLimitMiB: 512,
-    });
-
-    clusterContainer.addPortMappings({
-      containerPort: 8080,
-      hostPort: 8080,
-      protocol: ecs.Protocol.TCP,
-    });
-
-    // Attempting to automate the running of the task.
-
-    // const runTask = new cdk.aws_stepfunctions_tasks.EcsRunTask(this, 'Run', {
-    //   integrationPattern: cdk.aws_stepfunctions.IntegrationPattern.RUN_JOB,
-    //   cluster,
-    //   taskDefinition,
-    //   launchTarget: new cdk.aws_stepfunctions_tasks.EcsEc2LaunchTarget({
-    //     placementStrategies: [
-    //       ecs.PlacementStrategy.spreadAcrossInstances(),
-    //       ecs.PlacementStrategy.packedByCpu(),
-    //       ecs.PlacementStrategy.randomly(),
-    //     ],
-    //   }),
-    // });
   }
 }
