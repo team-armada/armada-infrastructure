@@ -1,18 +1,28 @@
+// import path from 'path';
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
+import * as ecrdeploy from 'cdk-ecr-deployment';
+
+
 export class ArmadaInfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // Create a Virtual Private Network
-    const vpc = new ec2.Vpc(this, 'TheVPC', {
+    /****************************************************************
+    * Virtual Private Cloud (VPC)
+    ****************************************************************/
+    const vpc = new ec2.Vpc(this, 'VPC', {
       cidr: '10.0.0.0/16',
+      maxAzs: 3,
       subnetConfiguration: [
         {
-          name: 'public-subnet',
+          name: 'publicSubnet',
           subnetType: ec2.SubnetType.PUBLIC,
           cidrMask: 24,
         },
@@ -20,67 +30,169 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       natGateways: 0,
     });
 
-    // EC2 Instance Security Group
-    const SecurityGroup = new ec2.SecurityGroup(this, 'armada-security-group', {
+    /****************************************************************
+     * Security Groups
+    ****************************************************************/
+    const securityGroup = new ec2.SecurityGroup(this, 'SecurityGroup', {
       vpc,
       description: 'Security Group for Armada Instance',
       allowAllIpv6Outbound: true,
       allowAllOutbound: true,
-      securityGroupName: 'Armada Security Group',
+      securityGroupName: 'Security Group for Armada App',
     });
 
     // Allow SSH
-    SecurityGroup.addIngressRule(
+    securityGroup.addIngressRule(
       ec2.Peer.anyIpv4(),
       ec2.Port.tcp(22),
       'SSH Access'
     );
 
     // Allow HTTP
-    SecurityGroup.addIngressRule(
+    securityGroup.addIngressRule(
       ec2.Peer.anyIpv4(),
       ec2.Port.tcp(80),
       'HTTP Access'
     );
 
     // Allow HTTPS
-    SecurityGroup.addIngressRule(
+    securityGroup.addIngressRule(
       ec2.Peer.anyIpv4(),
       ec2.Port.tcp(443),
       'HTTPS Access'
     );
 
-    SecurityGroup.addIngressRule(
+    // With dynamic port mapping we won't have to
+    // hard code the host container port
+    securityGroup.addIngressRule(
       ec2.Peer.anyIpv4(),
       ec2.Port.tcp(8080),
       'Allow Container Access'
     );
 
-    // TODO: get AMI ID from SSM param store to get portable deployments
-    const latestUbuntuImageURL =
-      '/aws/service/canonical/ubuntu/server/focal/stable/current/amd64/hvm/ebs-gp2/ami-id';
-    const instanceAMI = ec2.MachineImage.fromSsmParameter(
-      latestUbuntuImageURL,
-      {
-        os: ec2.OperatingSystemType.LINUX,
-      }
+    // Add default capacity to the cluster.
+    const ec2InstanceType = ec2.InstanceType.of(
+      ec2.InstanceClass.T2,
+      ec2.InstanceSize.MICRO,
     );
+        
 
-    // Elastic Container Registry (ECR)
-    const repository = new ecr.Repository(this, 'Repository');
+    /****************************************************************
+     * Elastic Container Service (ECR)
+    ****************************************************************/
+    const repository = new ecr.Repository(this, 'ECRRepository');
 
-    // Elastic Container Service
-    const cluster = new ecs.Cluster(this, 'Cluster', { vpc });
+    // create image and upload to ECR image registry 
+    // const image = new DockerImageAsset(this, 'CoderServerDockerImage', {
+    //   directory: path.join(__dirname, 'Dockerfile')
+    // })
 
-    // Add capacity to the cluster.
-    const clusterInstance = cluster.addCapacity(
-      'DefaultAutoScalingGroupCapacity',
-      {
-        instanceType: new ec2.InstanceType('t2.micro'),
-        desiredCapacity: 1,
-      }
-    );
+    // new ecrdeploy.ECRDeployment(this, 'DeployDockerImage', {
+    //   src: new ecrdeploy.DockerImageName(image.imageUri),
+    //   dest: new ecrdeploy.DockerImageName(`${cdk.Aws.ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/test:nginx`),
+    // });
 
-    clusterInstance.addSecurityGroup(SecurityGroup);
+    // Pick image stored in registry 
+    // ecs.ContainerImage.fromRegistry("armada/someImageName", { 
+    //   credentials: mySecret 
+    // })
+
+
+    /****************************************************************
+     * Auto Scaling Group 
+    ****************************************************************/
+    // Explicitly add customized capacity through ASG
+    const autoScalingGroup = new autoscaling.AutoScalingGroup(this, 'ASG', {
+      vpc,
+      instanceType: ec2InstanceType,
+      machineImage: ecs.EcsOptimizedImage.amazonLinux(),
+      desiredCapacity: 1, 
+      minCapacity: 1, 
+      maxCapacity: 3,
+      securityGroup: securityGroup
+    })
+
+    // ECS Capacity Provider
+    // A capacity provider is an abstraction that uses an ASG underneath
+    // It's a way to make your ECS cluster "ASG-aware". Think ASG adapter for ECS
+    const capacityProvider = new ecs.AsgCapacityProvider(this, 'AsgCapacityProvider', {
+      autoScalingGroup,
+    });
+    
+    
+    
+    /****************************************************************
+     * Elastic Container Service
+    ****************************************************************/
+    const cluster = new ecs.Cluster(this, 'ECS-Cluster', { 
+      clusterName: 'ECS-Cluster', 
+      vpc: vpc,
+      containerInsights: true // enabled for CloudWatch logs
+    });
+    
+    // Attach Security grouop to ECS cluster
+    cluster.addAsgCapacityProvider(capacityProvider)
+  
+
+    // register default task definitions HERE (e.g. JS, Ruby, Go)
+
+    /****************************************************************
+     * Application Load Balancer  
+    ****************************************************************/
+    // ALB -> ALB Listener -> Target Group -> Target -> ECS Task
+    const loadBalancer = new elbv2.ApplicationLoadBalancer(this, `ALB-${id}`, {
+      vpc,
+      internetFacing: true
+    }); 
+
+    // NOTE: eventually we want to use port 443 and HTTPS
+    const lbListener = loadBalancer.addListener('Listener', {
+      port: 80, 
+      open: true, // Allow CDK to automatically create security 
+                 // group rule to allow traffic on port 80
+      protocol: elbv2.ApplicationProtocol.HTTP,
+    }); 
+
+    // NOTE TO SELF: 
+    /*
+      - We'll need two target groups??????? 
+        1. One that will contain all the workspace tasks 
+        2. Another that will contain all our micro-services 
+      - Potential steps
+        - Register ANY Service as a Target group
+        
+    */
+  
+    lbListener.addTargets('LoadBalancerListener', {
+      port: 80,
+      targets: [autoScalingGroup], // our target should be target group that contains tasks/services
+      healthCheck: { path: '/health' }
+    });
+    
+    // lbListener.connections.allowDefaultPortFromAnyIpv4('Open to the world');
   }
+
+
 }
+
+
+
+/*
+TODOS 
+- Create 3 VPC Availability Zones 
+- Create 3 subnet to support Application Load Balancer
+- Add our code-server docker image to our private ECR
+
+
+Questions: 
+- Could we create a service that contains a single task? 
+  - when needing to close the service? bring the service count down to ZERO? 
+  - Launch the service from the task definition
+
+- Target group 
+  - How can you get a service to self-register? 
+    - Do we use service discovery? 
+  - You can only add services as a target group, not tasks. 
+  - Might need to register targets with the SDK? 
+
+*/
