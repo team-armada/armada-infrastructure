@@ -6,8 +6,9 @@ import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
-import * as ecrdeploy from 'cdk-ecr-deployment';
+// import * as iam from 'aws-cdk-lib/aws-iam';
+// import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
+// import * as ecrdeploy from 'cdk-ecr-deployment';
 
 
 export class ArmadaInfrastructureStack extends cdk.Stack {
@@ -29,6 +30,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       ],
       natGateways: 0,
     });
+
 
     /****************************************************************
      * Security Groups
@@ -81,6 +83,8 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
      * Elastic Container Service (ECR)
     ****************************************************************/
     const repository = new ecr.Repository(this, 'ECRRepository');
+
+    
 
     // create image and upload to ECR image registry 
     // const image = new DockerImageAsset(this, 'CoderServerDockerImage', {
@@ -136,40 +140,59 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
 
     // register default task definitions HERE (e.g. JS, Ruby, Go)
 
+
     /****************************************************************
      * Application Load Balancer  
     ****************************************************************/
-    // ALB -> ALB Listener -> Target Group -> Target -> ECS Task
-    const loadBalancer = new elbv2.ApplicationLoadBalancer(this, `ALB-${id}`, {
+    const loadBalancer = new elbv2.ApplicationLoadBalancer(this, "LoadBalancer", {
       vpc,
       internetFacing: true
     }); 
 
-    // NOTE: eventually we want to use port 443 and HTTPS
-    const lbListener = loadBalancer.addListener('Listener', {
+    // // NOTE: eventually we want to use port 443 and HTTPS
+    const lbListener = loadBalancer.addListener('LBListener', {
       port: 80, 
       open: true, // Allow CDK to automatically create security 
                  // group rule to allow traffic on port 80
       protocol: elbv2.ApplicationProtocol.HTTP,
     }); 
-
-    // NOTE TO SELF: 
-    /*
-      - We'll need two target groups??????? 
-        1. One that will contain all the workspace tasks 
-        2. Another that will contain all our micro-services 
-      - Potential steps
-        - Register ANY Service as a Target group
-        
-    */
   
+    // When you add an autoscaling group as the target 
+    // CDK automatically puts the instances associated with that ASG into a target grouop
     lbListener.addTargets('LoadBalancerListener', {
-      port: 80,
-      targets: [autoScalingGroup], // our target should be target group that contains tasks/services
-      healthCheck: { path: '/health' }
+      targets: [autoScalingGroup], 
+      healthCheck: { 
+        enabled: true,
+        healthyHttpCodes: '200-299',
+        path: '/'
+      }
     });
     
-    // lbListener.connections.allowDefaultPortFromAnyIpv4('Open to the world');
+    lbListener.connections.allowDefaultPortFromAnyIpv4('Open to the world');
+
+
+    /****************************************************************
+     * Task Definition + Service (FOR TESTING ONLY)
+    ****************************************************************/
+    const taskDefinition = new ecs.Ec2TaskDefinition(this, 'Health-Check-Service-Task-Definition', {
+      networkMode: ecs.NetworkMode.BRIDGE,
+    }); 
+
+    taskDefinition.addContainer('HealthCheckContainer', {
+      image: ecs.ContainerImage.fromRegistry("amazon/health-check-service"), 
+      memoryLimitMiB: 1024,
+      portMappings: [
+        { hostPort: 0, containerPort: 5000 }
+      ]
+    });
+  
+    // Instantiate an ECS Service 
+    const ecsService = new ecs.Ec2Service(this, 'health-check-service', {
+      cluster, 
+      taskDefinition
+    });    
+
+    
   }
 
 
@@ -183,7 +206,6 @@ TODOS
 - Create 3 subnet to support Application Load Balancer
 - Add our code-server docker image to our private ECR
 
-
 Questions: 
 - Could we create a service that contains a single task? 
   - when needing to close the service? bring the service count down to ZERO? 
@@ -194,5 +216,5 @@ Questions:
     - Do we use service discovery? 
   - You can only add services as a target group, not tasks. 
   - Might need to register targets with the SDK? 
-
 */
+
