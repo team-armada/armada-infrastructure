@@ -77,30 +77,6 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       ec2.InstanceClass.T2,
       ec2.InstanceSize.MICRO,
     );
-        
-
-    /****************************************************************
-     * Elastic Container Service (ECR)
-    ****************************************************************/
-    const repository = new ecr.Repository(this, 'ECRRepository');
-
-    
-
-    // create image and upload to ECR image registry 
-    // const image = new DockerImageAsset(this, 'CoderServerDockerImage', {
-    //   directory: path.join(__dirname, 'Dockerfile')
-    // })
-
-    // new ecrdeploy.ECRDeployment(this, 'DeployDockerImage', {
-    //   src: new ecrdeploy.DockerImageName(image.imageUri),
-    //   dest: new ecrdeploy.DockerImageName(`${cdk.Aws.ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/test:nginx`),
-    // });
-
-    // Pick image stored in registry 
-    // ecs.ContainerImage.fromRegistry("armada/someImageName", { 
-    //   credentials: mySecret 
-    // })
-
 
     /****************************************************************
      * Auto Scaling Group 
@@ -197,24 +173,4 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
 
 
 }
-
-
-
-/*
-TODOS 
-- Create 3 VPC Availability Zones 
-- Create 3 subnet to support Application Load Balancer
-- Add our code-server docker image to our private ECR
-
-Questions: 
-- Could we create a service that contains a single task? 
-  - when needing to close the service? bring the service count down to ZERO? 
-  - Launch the service from the task definition
-
-- Target group 
-  - How can you get a service to self-register? 
-    - Do we use service discovery? 
-  - You can only add services as a target group, not tasks. 
-  - Might need to register targets with the SDK? 
-*/
 
