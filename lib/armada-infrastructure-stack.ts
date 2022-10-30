@@ -146,7 +146,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     listener.addTargets('Target-Group-ASG', {
       port: 80,
       targets: [asg],
-      healthCheck: { // if problems comment out `healthcheck`
+      healthCheck: { 
         enabled: true,
         healthyHttpCodes: '200-299', 
         path: '/'
