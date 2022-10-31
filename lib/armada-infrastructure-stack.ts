@@ -51,7 +51,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
 
 
     // Launch Template Security Groups
-    const ltSecurityGroup = new ec2.SecurityGroup(this, "Security-Group-for-Launch-Template", {
+    const ltSecurityGroup = new ec2.SecurityGroup(this, "Launch-Template-Security-Group", {
       vpc: vpc, 
       allowAllOutbound: true,
       description: "Security Group for Launch Template ECS Instances"
@@ -77,6 +77,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       ),
       securityGroup: ltSecurityGroup, 
       userData: ec2.UserData.forLinux(),
+      // grant ec2 instances communication access to ECS cluster
       role: new iam.Role(this, 'ec2AccessRole', {
         assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com')
       })
@@ -110,12 +111,14 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     // ECS capacity provider 
     const capacityProvider = new ecs.AsgCapacityProvider(this, 'ASG-Capacity-Provider', {
       capacityProviderName: "ASG-Capacity-Provider", 
+      // manage cluster scaling using ASG strategy
       autoScalingGroup: asg
     });
 
     const cluster = new ecs.Cluster(this, 'ECS-Cluster', { 
       clusterName: 'ECS-Cluster', 
       vpc: vpc,
+      // collect metrics and logs from your containers
       containerInsights: true // enabled for CloudWatch logs
     });
     
@@ -145,7 +148,9 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     // CDK automatically puts the instances associated with that ASG into a target grouop
     listener.addTargets('Target-Group-ASG', {
       port: 80,
-      targets: [asg],
+      // send traffic to automatically created Target Group 
+      // that contains any instance created by Auto Scaling Group
+      targets: [asg], 
       healthCheck: { 
         enabled: true,
         healthyHttpCodes: '200-299', 
