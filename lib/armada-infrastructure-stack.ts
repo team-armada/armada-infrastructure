@@ -243,9 +243,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     const storageLambda = new lambda.Function(this, 'createEFSFolders', {
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'createEFSFolders.handler',
-      code: lambda.Code.fromAsset(
-        path.join(__dirname, '../lambdas/createEFSFolders')
-      ),
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambdas')),
       memorySize: 128,
       timeout: cdk.Duration.seconds(5),
       securityGroups: [ArmadaStorageSecurity],

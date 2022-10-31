@@ -4,7 +4,9 @@ import * as cdk from 'aws-cdk-lib';
 import { ArmadaInfrastructureStack } from '../lib/armada-infrastructure-stack';
 
 const app = new cdk.App();
-new ArmadaInfrastructureStack(app, 'ArmadaInfrastructureStack', {
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const stack = new ArmadaInfrastructureStack(app, 'ArmadaInfrastructureStack', {
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
     region: process.env.CDK_DEFAULT_REGION,
