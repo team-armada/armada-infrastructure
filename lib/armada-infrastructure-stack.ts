@@ -9,6 +9,7 @@ import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import { Duration } from 'aws-cdk-lib';
 
 export class ArmadaInfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -262,6 +263,8 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     /****************************************************************
      * Cognito User Pool
     ****************************************************************/
+    // ATTENTION: Cognito user pools are immutable
+    // once a user pool has been created it cannot be changed.
     const userPool = new cognito.UserPool(this, 'Cognito-User-Pool', {
       userPoolName: 'Cognito-User-Pool', 
       signInCaseSensitive: false, 
@@ -269,14 +272,30 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       selfSignUpEnabled: true, 
       // users are allowed to sign in with email only
       signInAliases: {
-        email: true
+        email: true, 
       }, 
       // attributes cognito will request verification for 
       autoVerify: {
-        email: true
+        email: true, 
       }, 
+      // keep original email, until user verifies new email
+      keepOriginal: {
+        email: true
+      },
+
+      // Sign up 
       // standard attributes users must provide when signing up 
       standardAttributes: {
+        // required
+        email: {
+          required: true, 
+          mutable: true
+        },
+        preferredUsername: {
+          required: false, 
+          mutable: true
+        },
+        // to be updated when user sets up profile 
         givenName: {
           required: false, 
           mutable: true
@@ -305,12 +324,10 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
           required: false, 
           mutable: true
         },
-        email: {
-          required: false, 
-          mutable: true
-        },
+        
       },
       // non-standard attributes that will store user profile info 
+      // custom attributes cannot be marked as required
       customAttributes: {
         isAdmin: new cognito.StringAttribute({ mutable: true }),
       }, 
@@ -320,13 +337,39 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
         requireLowercase: true, 
         requireDigits: true, 
         requireUppercase: true, 
-        requireSymbols: true
+        requireSymbols: true, 
+        tempPasswordValidity: Duration.days(7)
       }, 
       // how users can recover their account if they forget their password 
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
       // whether the user pool should be retained in the account after the 
       // stack is deleted. 
-      removalPolicy: cdk.RemovalPolicy.RETAIN
+      removalPolicy: cdk.RemovalPolicy.RETAIN, 
+
+      /* User verification 
+        - When a user signs up, email and SMS messages are used to verify their 
+          account and contact methods. 
+        - The following code snippet configures a user pool with properties to 
+          these verification messages: 
+      */
+      userVerification: {
+        emailSubject: 'Please verify your email to get started using Armada!',
+        emailBody: 'Thanks for signing up to Armada! Your verification code is {####}',
+        emailStyle: cognito.VerificationEmailStyle.CODE,
+      },
+      userInvitation: {
+        emailSubject: 'Invite to join Armada!',
+        emailBody: 'Hello {username}, you have been invited to join Armada! Your temporary password is {####}',
+      },
+
+      // sending emails through SES requires that SES be configured in a 
+      // valid SES region. 
+      email: cognito.UserPoolEmail.withSES({
+        sesRegion: "us-east-2",
+        fromEmail: "noreplay@releasethefleet.com",
+        fromName: "Armada - Release the fleet!", 
+        replyTo: "support@releasethefleet.com"
+      })
     }); 
 
     // NOTE: Front-end testing 
