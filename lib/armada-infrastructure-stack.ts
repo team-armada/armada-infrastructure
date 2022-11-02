@@ -364,12 +364,13 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
 
       // sending emails through SES requires that SES be configured in a 
       // valid SES region. 
-      email: cognito.UserPoolEmail.withSES({
-        sesRegion: "us-east-2",
-        fromEmail: "noreplay@releasethefleet.com",
-        fromName: "Armada - Release the fleet!", 
-        replyTo: "support@releasethefleet.com"
-      })
+      // email: cognito.UserPoolEmail.withSES({
+      //   sesRegion: "us-east-2",
+      //   fromEmail: "noreplay@releasethefleet.com",
+      //   fromName: "Armada - Release the fleet!", 
+      //   replyTo: "support@releasethefleet.com"
+      // })
+      email: cognito.UserPoolEmail.withCognito("support@releasethefleet.com"); 
     }); 
 
     // NOTE: Front-end testing 
