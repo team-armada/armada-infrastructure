@@ -364,12 +364,10 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
 
       email: cognito.UserPoolEmail.withCognito("support@releasethefleet.com")
     }); 
-    
 
     // --------------------------------------------------------------------
     // NOTE: Front-end testing 
     // to test auth in frontend use `userPoolId` and `userPoolClientId`
-    // in your AWS Cognito AWS Console 
-
+    // in your AWS Cognito AWS Console
   }
 }
