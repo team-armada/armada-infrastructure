@@ -362,17 +362,11 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
         emailBody: 'Hello {username}, you have been invited to join Armada! Your temporary password is {####}',
       },
 
-      // sending emails through SES requires that SES be configured in a 
-      // valid SES region. 
-      // email: cognito.UserPoolEmail.withSES({
-      //   sesRegion: "us-east-2",
-      //   fromEmail: "noreplay@releasethefleet.com",
-      //   fromName: "Armada - Release the fleet!", 
-      //   replyTo: "support@releasethefleet.com"
-      // })
-      email: cognito.UserPoolEmail.withCognito("support@releasethefleet.com"); 
+      email: cognito.UserPoolEmail.withCognito("support@releasethefleet.com")
     }); 
+    
 
+    // --------------------------------------------------------------------
     // NOTE: Front-end testing 
     // to test auth in frontend use `userPoolId` and `userPoolClientId`
     // in your AWS Cognito AWS Console 
