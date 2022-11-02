@@ -8,6 +8,8 @@ import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as rds from 'aws-cdk-lib/aws-rds';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 
 export class ArmadaInfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -256,5 +258,24 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       allowPublicSubnet: true,
       functionName: 'createEFSFolders',
     });
+
+
+    /****************************************************************
+     * Database (RDS)
+     ****************************************************************/
+
+    const databaseSecret = new secretsmanager.Secret(this, "SOME_ENV_SECRET_HERE");
+    const engine = rds.DatabaseInstanceEngine.postgres({ version: rds.PostgresEngineVersion.VER_10_4 });
+
+    const databaseInstance = new rds.DatabaseInstance(
+      this,
+      "PostgresInstance",
+      {
+        engine,
+        credentials: rds.Credentials.fromSecret(databaseSecret),
+        allocatedStorage: 8,
+        vpc
+      }
+    );
   }
 }
