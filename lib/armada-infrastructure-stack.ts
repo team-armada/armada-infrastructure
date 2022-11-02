@@ -378,9 +378,6 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     });
     
     
-
-
-
     // --------------------------------------------------------------------
     // NOTE: Front-end testing 
     // to test auth in frontend use `userPoolId` and `userPoolClientId`
