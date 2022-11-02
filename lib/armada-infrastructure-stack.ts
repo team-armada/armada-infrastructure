@@ -262,8 +262,9 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     /****************************************************************
      * Cognito User Pool
     ****************************************************************/
-    const userPool = new cognito.UserPool(this, 'userpool', {
-      userPoolName: 'Cognito-User-Pool-Armada', 
+    const userPool = new cognito.UserPool(this, 'Cognito-User-Pool', {
+      userPoolName: 'Cognito-User-Pool', 
+      signInCaseSensitive: false, 
       // users are allowed to sign up
       selfSignUpEnabled: true, 
       // users are allowed to sign in with email only
