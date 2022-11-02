@@ -27,6 +27,11 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
           subnetType: ec2.SubnetType.PUBLIC,
           cidrMask: 24,
         },
+        {
+          name: 'privateSubnet',
+          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+          cidrMask: 24,
+        },
       ],
       natGateways: 0,
     });
@@ -34,7 +39,8 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     /****************************************************************
      * Security Groups
      ****************************************************************/
-    // Application Load Balancer Security Groups
+
+    //Application Load Balancer Security Groups
     const albSecurityGroup = new ec2.SecurityGroup(this, 'ALB-Security-Group', {
       vpc,
       description: 'ALB Security Group',
@@ -71,7 +77,24 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       'Allow all traffic on all ports coming from Application Load Balancer'
     );
 
-    // Security Group for Storage
+    // RDS Connection Security Group
+    const RDSConnSecurityGroup = new ec2.SecurityGroup(
+      this,
+      'RDS-Connection-Security-Group',
+      {
+        vpc,
+        allowAllOutbound: true,
+        description: 'Security Group for connections between EC2 instances and RDS',
+      }
+    );
+
+    RDSConnSecurityGroup.addIngressRule(
+      ec2.Peer.anyIpv4(),
+      ec2.Port.tcp(5432),
+      'HTTP Access'
+    );
+
+     // Security Group for Storage
     const ArmadaStorageSecurity = new ec2.SecurityGroup(
       this,
       'EFSSecurityGroup',
@@ -98,6 +121,8 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
         assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
       }),
     });
+
+    launchTemplate.connections.addSecurityGroup(RDSConnSecurityGroup);
 
     /****************************************************************
      * Auto Scaling Group
@@ -264,18 +289,49 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
      * Database (RDS)
      ****************************************************************/
 
-    const databaseSecret = new secretsmanager.Secret(this, "SOME_ENV_SECRET_HERE");
-    const engine = rds.DatabaseInstanceEngine.postgres({ version: rds.PostgresEngineVersion.VER_10_4 });
+    // const databaseSecret = new secretsmanager.Secret(this, "SOME_ENV_SECRET_HERE");
+    const engine = rds.DatabaseInstanceEngine.postgres({ version: rds.PostgresEngineVersion.VER_13_7 });
 
-    const databaseInstance = new rds.DatabaseInstance(
-      this,
-      "PostgresInstance",
-      {
-        engine,
-        credentials: rds.Credentials.fromSecret(databaseSecret),
-        allocatedStorage: 8,
-        vpc
-      }
+    const dbInstance = new rds.DatabaseInstance(this, 'Postgres-Database', {
+      vpc,
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+      },
+      engine,
+      instanceType: ec2.InstanceType.of(
+        ec2.InstanceClass.BURSTABLE3,
+        ec2.InstanceSize.MICRO,
+      ),
+      // credentials: rds.Credentials.fromGeneratedSecret('postgres'),
+      // credentials: rds.Credentials.fromSecret(databaseSecret),
+      multiAz: false,
+      allocatedStorage: 100,
+      maxAllocatedStorage: 105,
+      allowMajorVersionUpgrade: false,
+      autoMinorVersionUpgrade: true,
+      backupRetention: cdk.Duration.days(0),
+      deleteAutomatedBackups: true,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      deletionProtection: false,
+      databaseName: 'PostgresDatabase',
+      publiclyAccessible: false,
+    });
+
+    dbInstance.connections.allowFrom(
+      new ec2.Connections({
+        securityGroups: [RDSConnSecurityGroup],
+      }),
+      ec2.Port.allTraffic(),
+      'Allow all traffic from EC2 instances on RDS connection security group'
     );
+
+    new cdk.CfnOutput(this, 'dbEndpoint', {
+      value: dbInstance.instanceEndpoint.hostname,
+    });
+
+    new cdk.CfnOutput(this, 'secretName', {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
+      value: dbInstance.secret?.secretName!,
+    });
   }
 }
