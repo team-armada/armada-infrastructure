@@ -8,6 +8,7 @@ import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
 
 export class ArmadaInfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -256,5 +257,80 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       allowPublicSubnet: true,
       functionName: 'createEFSFolders',
     });
+
+
+    /****************************************************************
+     * Cognito User Pool
+    ****************************************************************/
+    const userPool = new cognito.UserPool(this, 'userpool', {
+      userPoolName: 'Cognito-User-Pool-Armada', 
+      // users are allowed to sign up
+      selfSignUpEnabled: true, 
+      // users are allowed to sign in with email only
+      signInAliases: {
+        email: true
+      }, 
+      // attributes cognito will request verification for 
+      autoVerify: {
+        email: true
+      }, 
+      // standard attributes users must provide when signing up 
+      standardAttributes: {
+        givenName: {
+          required: false, 
+          mutable: true
+        }, 
+        familyName: {
+          required: false, 
+          mutable: true
+        }, 
+        timezone: {
+          required: false, 
+          mutable: true
+        }, 
+        profilePage: {
+          required: false, 
+          mutable: true
+        },
+        lastUpdateTime: {
+          required: false, 
+          mutable: true
+        },
+        website: {
+          required: false, 
+          mutable: true
+        },
+        profilePicture: {
+          required: false, 
+          mutable: true
+        },
+        email: {
+          required: false, 
+          mutable: true
+        },
+      },
+      // non-standard attributes that will store user profile info 
+      customAttributes: {
+        isAdmin: new cognito.StringAttribute({ mutable: true }),
+      }, 
+      // password policy criteria 
+      passwordPolicy: {
+        minLength: 8, 
+        requireLowercase: true, 
+        requireDigits: true, 
+        requireUppercase: true, 
+        requireSymbols: true
+      }, 
+      // how users can recover their account if they forget their password 
+      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+      // whether the user pool should be retained in the account after the 
+      // stack is deleted. 
+      removalPolicy: cdk.RemovalPolicy.RETAIN
+    }); 
+
+    // NOTE: Front-end testing 
+    // to test auth in frontend use `userPoolId` and `userPoolClientId`
+    // in your AWS Cognito AWS Console 
+
   }
 }
