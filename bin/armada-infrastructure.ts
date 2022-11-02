@@ -3,6 +3,7 @@ import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { VPCStack } from '../lib/vpc-stack';
 import { AutoScalingStack } from "../lib/autoscaling-stack"; 
+import { ALBStack } from "../lib/application-load-balancer-stack"; 
 
 const app = new cdk.App();
 
@@ -18,6 +19,9 @@ const infra = new VPCStack(app, 'VPC-Stack', {
 }); 
 
 // Application Load Balancer 
+const alb = new ALBStack(app, 'Application-Load-Balancer', {
+  vpc: infra.vpc, 
+})
 
 // Auto Scaling Group 
 const asg = new AutoScalingStack(app, 'Auto-Scaling-Group', {
