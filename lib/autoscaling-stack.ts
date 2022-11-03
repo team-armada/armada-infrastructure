@@ -14,6 +14,7 @@ export class AutoScalingStack extends cdk.Stack {
   public vpc: ec2.Vpc; 
   public albSecurityGroup: ec2.SecurityGroup; 
   public launchTemplate: ec2.LaunchTemplate; 
+  public autoScalingGroup: autoscaling.AutoScalingGroup; 
 
   constructor(scope: cdk.App, id: string, props: AutoScalingStackProps) {
     super(scope, id, props);
@@ -48,9 +49,9 @@ export class AutoScalingStack extends cdk.Stack {
       }),
     });
 
-    new autoscaling.AutoScalingGroup(this, 'Auto-Scaling-Group', {
+    this.autoScalingGroup = new autoscaling.AutoScalingGroup(this, 'Auto-Scaling-Group', {
       vpc: props?.vpc, 
     })
   }
-  
 }
+
