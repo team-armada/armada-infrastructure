@@ -48,7 +48,7 @@ export class SGStack extends cdk.Stack {
       'Allow all traffic on all ports coming from Application Load Balancer'
     );
 
-    // Security Group for Storage
+    // EFS Storage Security Group
     this.efs = new ec2.SecurityGroup(
       this,
       'EFSSecurityGroup',
@@ -57,6 +57,12 @@ export class SGStack extends cdk.Stack {
         description: 'Security Group for the Elastic File System',
         securityGroupName: 'Security Group for Armada Permanent Storage',
       }
+    );
+
+    this.efs.connections.allowFrom(
+      ec2.Peer.anyIpv4(),
+      ec2.Port.tcp(2049),
+      'Allow Network File Storage'
     );
 
     // RDS Security Group 

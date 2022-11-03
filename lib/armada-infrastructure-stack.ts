@@ -17,19 +17,19 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
 
     /****************************************************************
      * Virtual Private Cloud (VPC)
-     ****************************************************************/
-    // const vpc = new ec2.Vpc(this, 'VPC', {
-    //   cidr: '10.0.0.0/16',
-    //   maxAzs: 3,
-    //   subnetConfiguration: [
-    //     {
-    //       name: 'publicSubnet',
-    //       subnetType: ec2.SubnetType.PUBLIC,
-    //       cidrMask: 24,
-    //     },
-    //   ],
-    //   natGateways: 0,
-    // });
+    ****************************************************************/
+    const vpc = new ec2.Vpc(this, 'VPC', {
+      cidr: '10.0.0.0/16',
+      maxAzs: 3,
+      subnetConfiguration: [
+        {
+          name: 'publicSubnet',
+          subnetType: ec2.SubnetType.PUBLIC,
+          cidrMask: 24,
+        },
+      ],
+      natGateways: 0,
+    });
 
     /****************************************************************
      * Security Groups
@@ -84,7 +84,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
 
     /****************************************************************
      * Launch Template
-     ****************************************************************/
+    ****************************************************************/
     const launchTemplate = new ec2.LaunchTemplate(this, 'ASG-Launch-Template', {
       machineImage: ecs.EcsOptimizedImage.amazonLinux2(),
       instanceType: ec2.InstanceType.of(
@@ -101,7 +101,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
 
     /****************************************************************
      * Auto Scaling Group
-     ****************************************************************/
+    ****************************************************************/
     // Explicitly add customized capacity through ASG
     const asg = new autoscaling.AutoScalingGroup(this, 'Auto-Scaling-Group', {
       vpc,
@@ -117,7 +117,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
 
     /****************************************************************
      * Elastic Container Service
-     ****************************************************************/
+    ****************************************************************/
     // ECS Capacity Provider
     // A capacity provider is an abstraction that uses an ASG underneath
     // It's a way to make your ECS cluster "ASG-aware". Think ASG adapter for ECS
@@ -180,7 +180,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
 
     /****************************************************************
      * Elastic File System
-     ****************************************************************/
+    ****************************************************************/
 
     const ArmadaPermanentStorage = new efs.FileSystem(
       this,
@@ -190,8 +190,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
         securityGroup: ArmadaStorageSecurity,
         lifecyclePolicy: efs.LifecyclePolicy.AFTER_14_DAYS,
         performanceMode: efs.PerformanceMode.GENERAL_PURPOSE,
-        outOfInfrequentAccessPolicy:
-          efs.OutOfInfrequentAccessPolicy.AFTER_1_ACCESS,
+        outOfInfrequentAccessPolicy: efs.OutOfInfrequentAccessPolicy.AFTER_1_ACCESS,
         enableAutomaticBackups: true,
         fileSystemName: 'ArmadaPermanentStorage',
       }
