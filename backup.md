@@ -1,3 +1,4 @@
+```ts
 import * as path from 'path';
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
@@ -383,3 +384,5 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     // in your AWS Cognito AWS Console
   }
 }
+
+```

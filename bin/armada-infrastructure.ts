@@ -7,7 +7,7 @@ import { ALBStack } from "../lib/application-load-balancer-stack";
 import { SGStack } from "../lib/security-groups-stack"; 
 import { ECSStack } from "../lib/ecs-stack"; 
 import { EFSStack } from "../lib/efs-stack"; 
-import { RDSStack } from "../lib/rds-stack"; 
+// import { RDSStack } from "../lib/rds-stack"; 
 import { CognitoStack } from "../lib/cognito-stack"; 
 
 const app = new cdk.App();
@@ -31,7 +31,7 @@ const sg = new SGStack(app, 'Security-Groups', {
 // Auto Scaling Group Stack
 const asg = new AutoScalingStack(app, 'Auto-Scaling-Group', {
   vpc: infra.vpc,
-  albSecurityGroup: sg.alb, 
+  launchTemplateSecurityGroup: sg.launchTemplate, 
 });
 
 // Application Load Balancer Stack
@@ -47,7 +47,6 @@ const ecs = new ECSStack(app, 'ECS-Cluster', {
   autoScalingGroup: asg.autoScalingGroup
 });
 
-
 // Elastic File System 
 const efs = new EFSStack(app, 'Elastic-File-System', {
   vpc: infra.vpc,
@@ -59,9 +58,9 @@ const cognito = new CognitoStack(app, 'Cognito-User-Pool', {});
 
 
 // RDS (Database)
-const rds = new RDSStack(app, 'RDS-Database', {
-  rdsSecurityGroup: sg.rds
-});
+// const rds = new RDSStack(app, 'RDS-Database', {
+//   rdsSecurityGroup: sg.rds
+// });
 
 
 // Single Page App Construct 
@@ -69,8 +68,6 @@ const rds = new RDSStack(app, 'RDS-Database', {
 
 // }); 
 
-
-app.synth()
 
 
 
