@@ -1,9 +1,8 @@
 import * as cdk from 'aws-cdk-lib'; 
 import * as ec2 from 'aws-cdk-lib/aws-ec2'; 
+import * as ssm from 'aws-cdk-lib/aws-ssm'; 
 
-export interface SGStackProps extends cdk.StackProps {
-  vpc: ec2.Vpc; 
-}
+export interface SGStackProps extends cdk.StackProps {}
 
 export class SGStack extends cdk.Stack {
   public vpc: ec2.Vpc; 
@@ -14,9 +13,16 @@ export class SGStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props: SGStackProps) {
     super(scope, id, props);
 
+    const vpcId = ssm.StringParameter.valueFromLookup(this, '/VpcProvider/VPC-Id'); 
+
+    const vpc = ec2.Vpc.fromLookup(this, "VPC", {
+      vpcId: vpcId
+    }); 
+
+
     // Application Load Balancer Security Group 
     this.alb = new ec2.SecurityGroup(this, 'ALB-Security-Group', {
-      vpc: props.vpc,
+      vpc: vpc,
       description: 'ALB Security Group',
     });
 
@@ -34,7 +40,7 @@ export class SGStack extends cdk.Stack {
 
     // Launch Template Security Groups
     this.launchTemplate = new ec2.SecurityGroup(this , 'Launch-Template-SG', {
-        vpc: props.vpc,
+        vpc: vpc,
         allowAllOutbound: true,
         description: 'Security Group for Launch Template ECS Instances',
       }
@@ -48,12 +54,14 @@ export class SGStack extends cdk.Stack {
       'Allow all traffic on all ports coming from Application Load Balancer'
     );
 
+
+
     // EFS Storage Security Group
     this.efs = new ec2.SecurityGroup(
       this,
       'EFSSecurityGroup',
       {
-        vpc: props.vpc,
+        vpc: vpc,
         description: 'Security Group for the Elastic File System',
         securityGroupName: 'Security Group for Armada Permanent Storage',
       }
@@ -65,8 +73,23 @@ export class SGStack extends cdk.Stack {
       'Allow Network File Storage'
     );
 
-    // RDS Security Group 
+    // Outputs
+    new cdk.CfnOutput(this, "ALB-Security-Group-Id", {
+      value: this.alb.securityGroupId, 
+      description: "The Application Load Balancer's ID", 
+      exportName: "ALB-Security-Group-Id"
+    });
 
+    new cdk.CfnOutput(this, "Launch-Template-Security-Group-Id", {
+      value: this.launchTemplate.securityGroupId, 
+      description: "The Launch Template's Security Group Id", 
+      exportName: "Launch-Template-Security-Group-Id"
+    });
 
+    new cdk.CfnOutput(this, "EFS-Security-Group-Id", {
+      value: this.efs.securityGroupId, 
+      description: "The EFS Instance Id",
+      exportName: "EFS-Security-Group-Id"
+    }); 
   }
 }

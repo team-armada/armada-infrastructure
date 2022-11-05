@@ -15,7 +15,7 @@ const app = new cdk.App();
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
 // VPC Stack
-const infra = new VPCStack(app, 'VPC-Stack', {
+const infra = new VPCStack(app, 'VPC', {
   stackName: "VPC-Stack", 
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
@@ -23,38 +23,49 @@ const infra = new VPCStack(app, 'VPC-Stack', {
   },
 }); 
 
+
 // Security Groups Stack
 const sg = new SGStack(app, 'Security-Groups', {
-  vpc: infra.vpc
+  stackName: "Security-Group-Stack", 
+  env: {
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEFAULT_REGION,
+  },
 }); 
+
+// guarantee infra will be created first 
+sg.addDependency(infra); 
 
 // Auto Scaling Group Stack
 const asg = new AutoScalingStack(app, 'Auto-Scaling-Group', {
-  vpc: infra.vpc,
-  launchTemplateSecurityGroup: sg.launchTemplate, 
+  stackName: "Auto-Scaling-Group-Stack", 
+  env: {
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEFAULT_REGION,
+  },
 });
 
-// Application Load Balancer Stack
-const alb = new ALBStack(app, 'Application-Load-Balancer', {
-  vpc: infra.vpc, 
-  albSecurityGroup: sg.alb,
-  autoScalingGroup: asg.autoScalingGroup
-}); 
+// // Application Load Balancer Stack
+// const alb = new ALBStack(app, 'Application-Load-Balancer', {
+//   vpc: infra.vpc, 
+//   albSecurityGroup: sg.alb,
+//   autoScalingGroup: asg.autoScalingGroup
+// }); 
 
-// ECS Cluster Stack
-const ecs = new ECSStack(app, 'ECS-Cluster', {
-  vpc: infra.vpc,
-  autoScalingGroup: asg.autoScalingGroup
-});
+// // ECS Cluster Stack
+// const ecs = new ECSStack(app, 'ECS-Cluster', {
+//   vpc: infra.vpc,
+//   autoScalingGroup: asg.autoScalingGroup
+// });
 
-// Elastic File System 
-const efs = new EFSStack(app, 'Elastic-File-System', {
-  vpc: infra.vpc,
-  efsSecurityGroup: sg.efs
-}); 
+// // Elastic File System 
+// const efs = new EFSStack(app, 'Elastic-File-System', {
+//   vpc: infra.vpc,
+//   efsSecurityGroup: sg.efs
+// }); 
 
-// Cognito
-const cognito = new CognitoStack(app, 'Cognito-User-Pool', {}); 
+// // Cognito
+// const cognito = new CognitoStack(app, 'Cognito-User-Pool', {}); 
 
 
 // RDS (Database)
@@ -68,7 +79,7 @@ const cognito = new CognitoStack(app, 'Cognito-User-Pool', {});
 
 // }); 
 
-
+// app.synth(); 
 
 
 

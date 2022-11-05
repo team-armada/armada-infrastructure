@@ -1,5 +1,6 @@
 import * as cdk from 'aws-cdk-lib'; 
 import * as ec2 from 'aws-cdk-lib/aws-ec2'; 
+import * as ssm from 'aws-cdk-lib/aws-ssm'; 
 
 export class VPCStack extends cdk.Stack {
   public readonly vpc: ec2.Vpc;
@@ -19,5 +20,12 @@ export class VPCStack extends cdk.Stack {
       ],
       natGateways: 0,
     });
+
+    new ssm.StringParameter(this, "VPC-Id", {
+      parameterName: "/VpcProvider/VPC-Id",
+      stringValue: this.vpc.vpcId
+    })
+
+
   }
 }
