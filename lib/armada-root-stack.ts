@@ -65,6 +65,6 @@ export class ArmadaRootStack extends cdk.Stack {
       rdsSecurityGroup: infra.rdsSecurityGroup
     }); 
 
-    
+    rds.addDependency(infra); 
   }
 }
