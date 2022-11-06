@@ -22,6 +22,11 @@ export class VPCStack extends cdk.NestedStack {
           subnetType: ec2.SubnetType.PUBLIC,
           cidrMask: 24,
         },
+        {
+          name: 'privateSubnet',
+          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+          cidrMask: 28,
+        },
       ],
       natGateways: 0,
     });
