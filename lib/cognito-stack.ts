@@ -2,7 +2,9 @@ import { Construct } from 'constructs';
 import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 
+
 export interface CognitoStackProps extends cdk.NestedStackProps {}
+
 
 export class CognitoStack extends cdk.NestedStack {
   constructor(scope: Construct, id: string, props: CognitoStackProps) {
@@ -113,6 +115,6 @@ export class CognitoStack extends cdk.NestedStack {
     // Cognito App Client 
     const client = cognitoUserPool.addClient('Cognito-App-Client'); 
 
-    
+
   }
 }

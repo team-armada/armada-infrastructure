@@ -6,10 +6,12 @@ import * as efs from 'aws-cdk-lib/aws-efs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 
+
 export interface EFSStackProps extends cdk.NestedStackProps {
   vpc: ec2.Vpc;
   efsSecurityGroup: ec2.SecurityGroup; 
 }
+
 
 export class EFSStack extends cdk.NestedStack {
   public fileSystem: efs.FileSystem; 

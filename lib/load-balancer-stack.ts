@@ -47,11 +47,5 @@ export class ALBStack extends cdk.NestedStack {
         path: '/',
       },
     });
-
-    // Create CFN Output
-    new cdk.CfnOutput(this, 'ALB-DNS-name', {
-      value: alb.loadBalancerDnsName,
-    });
-
   }
 }

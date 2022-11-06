@@ -4,6 +4,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling'; 
 
+
 export interface ECSStackProps extends cdk.NestedStackProps {
   vpc: ec2.Vpc; 
   autoScalingGroup: autoscaling.AutoScalingGroup; 

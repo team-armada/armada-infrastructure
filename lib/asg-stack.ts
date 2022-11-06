@@ -5,6 +5,7 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as iam from 'aws-cdk-lib/aws-iam'; 
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling'; 
 
+
 interface ASGStackProps extends cdk.NestedStackProps {
   vpc: ec2.Vpc; 
   launchTemplateSecurityGroup: ec2.SecurityGroup; 

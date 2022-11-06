@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2'; 
 import { Construct } from 'constructs'; 
 
+
 export class VPCStack extends cdk.NestedStack {
   public readonly vpc: ec2.Vpc;
   public readonly albSecurityGroup: ec2.SecurityGroup; 
@@ -57,8 +58,6 @@ export class VPCStack extends cdk.NestedStack {
       ec2.Port.allTraffic(),
       'Allow all traffic on all ports coming from Application Load Balancer'
     );
-
-
 
     // EFS Storage Security Group
     this.efsSecurityGroup = new ec2.SecurityGroup(

@@ -33,14 +33,14 @@ export class ArmadaRootStack extends cdk.Stack {
     const asg = new ASGStack(this, "ASG-Stack", {
       vpc: infra.vpc,
       launchTemplateSecurityGroup: infra.launchTemplateSecurityGroup
-    })
+    }); 
 
     // Load Balancer 
     const loadBalancer = new ALBStack(this, "ALB-Stack", {
       vpc: infra.vpc,
       albSecurityGroup: infra.albSecurityGroup,
       autoScalingGroup: asg.autoScalingGroup
-    })
+    }); 
 
     loadBalancer.addDependency(asg); 
 
@@ -49,7 +49,7 @@ export class ArmadaRootStack extends cdk.Stack {
     const ecs = new ECSStack(this, 'ECS-Stack', {
       vpc: infra.vpc, 
       autoScalingGroup: asg.autoScalingGroup
-    })
+    }); 
 
     ecs.addDependency(asg); 
 
@@ -63,7 +63,7 @@ export class ArmadaRootStack extends cdk.Stack {
 
     // SPA Stack 
 
-    
+
 
   }
 }
