@@ -25,7 +25,7 @@ export class ArmadaRootStack extends cdk.Stack {
     const efs = new EFSStack(this, "EFS-Stack", {
       vpc: infra.vpc,
       efsSecurityGroup: infra.efsSecurityGroup
-    })
+    });
 
     efs.addDependency(infra); 
 
@@ -35,6 +35,8 @@ export class ArmadaRootStack extends cdk.Stack {
       vpc: infra.vpc,
       launchTemplateSecurityGroup: infra.launchTemplateSecurityGroup
     }); 
+
+    asg.addDependency(infra); 
 
     // Load Balancer 
     const loadBalancer = new ALBStack(this, "ALB-Stack", {

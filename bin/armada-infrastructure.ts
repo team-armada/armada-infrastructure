@@ -13,5 +13,3 @@ new ArmadaRootStack(app, "Armada-Root-Stack", {
   },
 });
 
-app.synth(); 
-
