@@ -1,49 +1,55 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { VPCStack } from '../lib/vpc-stack';
-import { AutoScalingStack } from "../lib/autoscaling-stack"; 
-import { ALBStack } from "../lib/application-load-balancer-stack"; 
-import { SGStack } from "../lib/security-groups-stack"; 
-import { ECSStack } from "../lib/ecs-stack"; 
-import { EFSStack } from "../lib/efs-stack"; 
-// import { RDSStack } from "../lib/rds-stack"; 
-import { CognitoStack } from "../lib/cognito-stack"; 
+import { ArmadaRootStack } from "../lib/armada-root-stack"; 
 
 const app = new cdk.App();
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-
-// VPC Stack
-const infra = new VPCStack(app, 'VPC', {
-  stackName: "VPC-Stack", 
-  env: {
-    account: process.env.CDK_DEFAULT_ACCOUNT,
-    region: process.env.CDK_DEFAULT_REGION,
-  },
-}); 
-
-
-// Security Groups Stack
-const sg = new SGStack(app, 'Security-Groups', {
-  stackName: "Security-Group-Stack", 
-  env: {
-    account: process.env.CDK_DEFAULT_ACCOUNT,
-    region: process.env.CDK_DEFAULT_REGION,
-  },
-}); 
-
-// guarantee infra will be created first 
-sg.addDependency(infra); 
-
-// Auto Scaling Group Stack
-const asg = new AutoScalingStack(app, 'Auto-Scaling-Group', {
-  stackName: "Auto-Scaling-Group-Stack", 
+new ArmadaRootStack(app, "Armada-Root-Stack", {
+  stackName: "Armada-Root-Stack",
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
     region: process.env.CDK_DEFAULT_REGION,
   },
 });
+
+
+
+
+
+// VPC Stack
+// const infra = new VPCStack(app, 'VPC', {
+//   stackName: "VPC-Stack", 
+//   env: {
+//     account: process.env.CDK_DEFAULT_ACCOUNT,
+//     region: process.env.CDK_DEFAULT_REGION,
+//   },
+// }); 
+
+
+// // Security Groups Stack
+// const sg = new SGStack(app, 'Security-Groups', {
+//   stackName: "Security-Group-Stack", 
+//   env: {
+//     account: process.env.CDK_DEFAULT_ACCOUNT,
+//     region: process.env.CDK_DEFAULT_REGION,
+//   },
+// }); 
+
+// // guarantee infra will be created first 
+// sg.addDependency(infra); 
+
+
+
+// Auto Scaling Group Stack
+// const asg = new AutoScalingStack(app, 'Auto-Scaling-Group', {
+//   stackName: "Auto-Scaling-Group-Stack", 
+//   env: {
+//     account: process.env.CDK_DEFAULT_ACCOUNT,
+//     region: process.env.CDK_DEFAULT_REGION,
+//   },
+// });
 
 // // Application Load Balancer Stack
 // const alb = new ALBStack(app, 'Application-Load-Balancer', {
@@ -80,12 +86,6 @@ const asg = new AutoScalingStack(app, 'Auto-Scaling-Group', {
 // }); 
 
 // app.synth(); 
-
-
-
-
-
-
 
 
 // const stack = new ArmadaInfrastructureStack(app, 'ArmadaInfrastructureStack', {

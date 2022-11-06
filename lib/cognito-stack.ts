@@ -1,11 +1,11 @@
-import * as cdk from 'aws-cdk-lib'; 
-import * as ec2 from 'aws-cdk-lib/aws-ec2'; 
+import { Construct } from 'constructs'; 
+import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 
-export interface CognitoStackProps extends cdk.StackProps {}
+export interface CognitoStackProps extends cdk.NestedStackProps {}
 
-export class CognitoStack extends cdk.Stack {
-  constructor(scope: cdk.App, id: string, props: CognitoStackProps) {
+export class CognitoStack extends cdk.NestedStack {
+  constructor(scope: Construct, id: string, props: CognitoStackProps) {
     super(scope, id, props); 
 
     // ATTENTION: Cognito user pools are immutable
@@ -113,13 +113,6 @@ export class CognitoStack extends cdk.Stack {
     // Cognito App Client 
     const client = cognitoUserPool.addClient('Cognito-App-Client'); 
 
-    // Outputs
-    new cdk.CfnOutput(this, 'userPoolId', {
-      value: cognitoUserPool.userPoolId,
-    });
-
-    new cdk.CfnOutput(this, 'userPoolClientId', {
-      value: client.userPoolClientId,
-    });
+    
   }
 }

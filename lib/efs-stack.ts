@@ -1,19 +1,20 @@
 import * as path from 'path';
+import { Construct } from 'constructs';
 import * as cdk from 'aws-cdk-lib'; 
 import * as ec2 from 'aws-cdk-lib/aws-ec2'; 
 import * as efs from 'aws-cdk-lib/aws-efs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 
-export interface EFSStackProps extends cdk.StackProps {
+export interface EFSStackProps extends cdk.NestedStackProps {
   vpc: ec2.Vpc;
   efsSecurityGroup: ec2.SecurityGroup; 
 }
 
-export class EFSStack extends cdk.Stack {
+export class EFSStack extends cdk.NestedStack {
   public fileSystem: efs.FileSystem; 
   
-  constructor(scope: cdk.App, id: string, props: EFSStackProps) {
+  constructor(scope: Construct, id: string, props: EFSStackProps) {
     super(scope, id, props);
 
     this.fileSystem = new efs.FileSystem(this, 'ArmadaFileSystem', {
