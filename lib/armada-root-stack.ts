@@ -8,6 +8,7 @@ import { CognitoStack } from './cognito-stack';
 import { ASGStack } from './asg-stack';
 import { ALBStack } from "./load-balancer-stack";
 import { ECSStack } from "./ecs-stack";
+import { RDSStack } from "./rds-stack";
 
 
 export class ArmadaRootStack extends cdk.Stack {
@@ -59,11 +60,11 @@ export class ArmadaRootStack extends cdk.Stack {
 
 
     // RDS Database 
+    const rds = new RDSStack(this, "RDS-Stack", {
+      vpc: infra.vpc, 
+      rdsSecurityGroup: infra.rdsSecurityGroup
+    }); 
 
-
-    // SPA Stack 
-
-
-
+    
   }
 }
