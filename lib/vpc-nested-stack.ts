@@ -8,6 +8,7 @@ export class VPCStack extends cdk.NestedStack {
   public readonly albSecurityGroup: ec2.SecurityGroup; 
   public readonly launchTemplateSecurityGroup: ec2.SecurityGroup; 
   public readonly efsSecurityGroup: ec2.SecurityGroup; 
+  public readonly rdsSecurityGroup: ec2.SecurityGroup; 
 
   constructor(scope: Construct, id: string, props?: cdk.NestedStackProps) {
     super(scope, id, props);
@@ -78,7 +79,21 @@ export class VPCStack extends cdk.NestedStack {
 
 
     // RDS 
+    this.rdsSecurityGroup = new ec2.SecurityGroup(
+      this,
+      'RDS-Connection-Security-Group',
+      {
+        vpc: this.vpc,
+        allowAllOutbound: true,
+        description: 'Security Group for connections between EC2 instances and RDS',
+      }
+    );
 
+    this.rdsSecurityGroup.addIngressRule(
+      ec2.Peer.anyIpv4(),
+      ec2.Port.tcp(5432),
+      'HTTP Access'
+    );
 
   }
 }
