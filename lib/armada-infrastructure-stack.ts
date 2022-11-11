@@ -10,6 +10,8 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as tasks from 'aws-cdk-lib/aws-stepfunctions-tasks';
+import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
 
 export class ArmadaInfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -277,5 +279,49 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
         vpc
       }
     );
+
+
+        // DATABASE_URL="postgresql://joey:Joey@localhost:5432/Armada?schema=public"
+
+    // db-secrets
+    // username
+    // password
+
+    // Load Balancer
+    //  - If the route matches cohort-course-user go to that workspace
+    //  - Default Route: Go to Admin App.
+
+    // Create our admin app task definition
+    // Interpolate all the values that are necessary
+
+    const taskDefinition = new ecs.Ec2TaskDefinition(this, 'TaskDef');
+
+    taskDefinition.addContainer('DefaultContainer', {
+      image: ecs.ContainerImage.fromRegistry('armada-application'),
+      memoryLimitMiB: 512,
+      environment: {
+        DATABASE_URL: dbInstance.ConnectionURL,
+      },
+      environmentFiles: [
+        // list of environment files hosted either on local disk or S3
+        ecs.EnvironmentFile.fromAsset('./demo-env-file.env'),
+      ],
+    });
+
+    // Instantiate an Amazon ECS Service
+    const ecsService = new ecs.Ec2Service(this, 'Service', {
+      cluster,
+      taskDefinition,
+    });
+
+    // run task
+    const runTask = new tasks.EcsRunTask(this, 'Run', {
+      integrationPattern: sfn.IntegrationPattern.RUN_JOB,
+      cluster,
+      taskDefinition,
+      launchTarget: new tasks.EcsEc2LaunchTarget({
+        placementStrategies: [ecs.PlacementStrategy.spreadAcrossInstances()],
+      }),
+    });
   }
 }
