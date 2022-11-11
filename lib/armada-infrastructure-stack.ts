@@ -545,9 +545,6 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     /****************************************************************
      * ECS Admin
      ****************************************************************/
-
-    // DATABASE_URL="postgresql://joey:Joey@localhost:5432/Armada?schema=public"
-
     // db-secrets
     // username
     // password
