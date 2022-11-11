@@ -9,13 +9,30 @@ import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as rds from 'aws-cdk-lib/aws-rds';
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as secretsManager from 'aws-cdk-lib/aws-secretsmanager';
 import * as tasks from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
+import { CfnParameter, Duration } from 'aws-cdk-lib';
+import { readFileSync } from 'fs';
 
 export class ArmadaInfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    /****************************************************************
+     * CDK Deploy Variables
+     ****************************************************************/
+    const accessKey = new CfnParameter(this, 'accessKey', {
+      type: 'String',
+      description: 'Please enter your access key id.',
+    });
+
+    const secretKey = new CfnParameter(this, 'secretKey', {
+      type: 'String',
+      description: 'Please enter your your secret key.',
+    });
 
     /****************************************************************
      * Virtual Private Cloud (VPC)
@@ -82,6 +99,32 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
         description: 'Security Group for the Elastic File System',
         securityGroupName: 'Security Group for Armada Permanent Storage',
       }
+    );
+
+    // AdminNode Security Group
+    const adminNodeSecurityGroup = new ec2.SecurityGroup(this, 'ec2-rds-1', {
+      vpc,
+      description: 'The security group for the admin node',
+    });
+
+    adminNodeSecurityGroup.addIngressRule(
+      ec2.Peer.anyIpv4(),
+      ec2.Port.tcp(22),
+      'Allow SSH access'
+    );
+
+    // RDS Security Group
+    const rdsSecurityGroup = new ec2.SecurityGroup(this, 'rds-ec2-1', {
+      vpc,
+      description: 'The security group for the rds instance',
+    });
+
+    rdsSecurityGroup.connections.allowFrom(
+      new ec2.Connections({
+        securityGroups: [adminNodeSecurityGroup],
+      }),
+      ec2.Port.allTraffic(),
+      'Allow all traffic on all ports coming from Application Load Balancer'
     );
 
     /****************************************************************
@@ -156,23 +199,15 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     // TODO: eventually we want to use port 443 and HTTPS
     const listener = alb.addListener('ALB-Listener', {
       port: 80, // listens for requests on port 80
-      open: true, // Allow CDK to automatically create security
-      // group rule to allow traffic on port 80
-      protocol: elbv2.ApplicationProtocol.HTTP,
-    });
+      open: true, // Allow CDK to automatically create security group rule to allow traffic on port 80
 
-    // When you add an autoscaling group as the target
-    // CDK automatically puts the instances associated with that ASG into a target group
-    listener.addTargets('Target-Group-ASG', {
-      port: 80,
-      // send traffic to automatically created Target Group
-      // that contains any instance created by Auto Scaling Group
-      targets: [asg],
-      healthCheck: {
-        enabled: true,
-        healthyHttpCodes: '200-299',
-        path: '/',
-      },
+      protocol: elbv2.ApplicationProtocol.HTTP,
+
+      // Specify the default action for the ALB's Listener on Port 80
+      defaultAction: elbv2.ListenerAction.fixedResponse(404, {
+        contentType: 'text/plain',
+        messageBody: `The developer environment you've requested could not be found.`,
+      }),
     });
 
     // Create CFN Output
@@ -261,27 +296,257 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       functionName: 'createEFSFolders',
     });
 
+    /****************************************************************
+     * Cognito User Pool
+     ****************************************************************/
+    // ATTENTION: Cognito user pools are immutable
+    // once a user pool has been created it cannot be changed.
+    const cognitoUserPool = new cognito.UserPool(this, 'Cognito-User-Pool', {
+      userPoolName: 'Cognito-User-Pool',
+      signInCaseSensitive: false,
+      // users are allowed to sign up
+      selfSignUpEnabled: false,
+      // users are allowed to sign in with email only
+      signInAliases: {
+        email: false,
+        username: true,
+      },
+      // attributes cognito will request verification for
+      autoVerify: {
+        email: true,
+      },
+
+      // keep original email, until user verifies new email
+      keepOriginal: {
+        email: true,
+      },
+
+      // Sign up
+      // standard attributes users must provide when signing up
+      standardAttributes: {
+        // required
+        email: {
+          required: true,
+          mutable: true,
+        },
+        // preferredUsername: {
+        //   required: false,
+        //   mutable: true
+        // },
+        // to be updated when user sets up profile
+        givenName: {
+          required: true,
+          mutable: true,
+        },
+        familyName: {
+          required: true,
+          mutable: true,
+        },
+        // timezone: {
+        //   required: false,
+        //   mutable: true
+        // },
+        // profilePage: {
+        //   required: false,
+        //   mutable: true
+        // },
+        // lastUpdateTime: {
+        //   required: false,
+        //   mutable: true
+        // },
+        // website: {
+        //   required: false,
+        //   mutable: true
+        // },
+        profilePicture: {
+          required: false,
+          mutable: true,
+        },
+      },
+      // non-standard attributes that will store user profile info
+      // custom attributes cannot be marked as required
+      customAttributes: {
+        isAdmin: new cognito.StringAttribute({ mutable: true }),
+      },
+      // password policy criteria
+      passwordPolicy: {
+        minLength: 8,
+        requireLowercase: true,
+        requireDigits: true,
+        requireUppercase: true,
+        requireSymbols: true,
+        tempPasswordValidity: Duration.days(7),
+      },
+      // how users can recover their account if they forget their password
+      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+      // whether the user pool should be retained in the account after the
+      // stack is deleted. set `cdk.RemovalPolicy.` to `RETAIN` when launching to production
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+
+      /* User verification
+        - When a user signs up, email and SMS messages are used to verify their
+          account and contact methods.
+        - The following code snippet configures a user pool with properties to 
+          these verification messages:
+      */
+      userVerification: {
+        emailSubject: 'Please verify your email to get started using Armada!',
+        emailBody:
+          'Thanks for signing up to Armada! Your verification code is {####}',
+        emailStyle: cognito.VerificationEmailStyle.CODE,
+      },
+      userInvitation: {
+        emailSubject: 'Invite to join Armada!',
+        emailBody:
+          'Hello {username}, you have been invited to join Armada! Your temporary password is {####}',
+      },
+
+      email: cognito.UserPoolEmail.withCognito('support@releasethefleet.com'),
+    });
+
+    // Cognito App Client
+    const cognitoClient = cognitoUserPool.addClient('Cognito-App-Client');
+
+    // Add a default admin user.
+    const adminUser = new cognito.CfnUserPoolUser(this, 'MyCfnUserPoolUser', {
+      userPoolId: cognitoUserPool.userPoolId,
+
+      // the properties below are optional
+      userAttributes: [
+        { name: 'custom:isAdmin', value: `true` },
+        { name: 'given_name', value: `Armada` },
+        { name: 'family_name', value: `Admin` },
+        { name: 'email', value: `thefourofours@gmail.com` },
+      ],
+      username: 'ArmadaAdmin',
+    });
+
+    // Outputs
+    new cdk.CfnOutput(this, 'userPoolId', {
+      value: cognitoUserPool.userPoolId,
+    });
+
+    new cdk.CfnOutput(this, 'userPoolClientId', {
+      value: cognitoClient.userPoolClientId,
+    });
 
     /****************************************************************
      * Database (RDS)
      ****************************************************************/
 
-    const databaseSecret = new secretsmanager.Secret(this, "SOME_ENV_SECRET_HERE");
-    const engine = rds.DatabaseInstanceEngine.postgres({ version: rds.PostgresEngineVersion.VER_10_4 });
-
-    const databaseInstance = new rds.DatabaseInstance(
+    // first, lets generate a secret to be used as credentials for our database
+    const databaseCredentialsSecret = new secretsManager.Secret(
       this,
-      "PostgresInstance",
+      `database-DBCredentialsSecret`,
       {
-        engine,
-        credentials: rds.Credentials.fromSecret(databaseSecret),
-        allocatedStorage: 8,
-        vpc
+        secretName: `database-credentials`,
+        generateSecretString: {
+          secretStringTemplate: JSON.stringify({
+            username: 'postgres',
+          }),
+          excludePunctuation: true,
+          includeSpace: false,
+          generateStringKey: 'password',
+        },
       }
     );
 
+    // lets output a few properties to help use find the credentials
+    // new cdk.CfnOutput(this, 'Secret Name', {
+    //   value: databaseCredentialsSecret.secretName,
+    // });
+    // new cdk.CfnOutput(this, 'Secret ARN', {
+    //   value: databaseCredentialsSecret.secretArn,
+    // });
+    // new cdk.CfnOutput(this, 'Secret Full ARN', {
+    //   value: databaseCredentialsSecret.secretFullArn || '',
+    // });
 
-        // DATABASE_URL="postgresql://joey:Joey@localhost:5432/Armada?schema=public"
+    // next, create a new string parameter to be used
+    new ssm.StringParameter(this, 'DBCredentialsArn', {
+      parameterName: `database-credentials-arn`,
+      stringValue: databaseCredentialsSecret.secretArn,
+    });
+
+    const engine = rds.DatabaseInstanceEngine.postgres({
+      version: rds.PostgresEngineVersion.VER_13_7,
+    });
+
+    const dbInstance = new rds.DatabaseInstance(this, 'Postgres-Database', {
+      vpc,
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PUBLIC,
+      },
+      engine,
+      instanceType: ec2.InstanceType.of(
+        ec2.InstanceClass.BURSTABLE3,
+        ec2.InstanceSize.MICRO
+      ),
+      availabilityZone: 'us-east-1a',
+      securityGroups: [rdsSecurityGroup],
+      multiAz: false,
+      allocatedStorage: 100,
+      maxAllocatedStorage: 105,
+      allowMajorVersionUpgrade: false,
+      autoMinorVersionUpgrade: true,
+      backupRetention: cdk.Duration.days(0),
+      deleteAutomatedBackups: true,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      deletionProtection: false,
+      databaseName: 'PostgresDatabase',
+      publiclyAccessible: false,
+      credentials: rds.Credentials.fromSecret(databaseCredentialsSecret),
+    });
+
+    // dbInstance.connections.allowFrom(
+    //   new ec2.Connections({
+    //     securityGroups: [RDSConnSecurityGroup],
+    //   }),
+    //   ec2.Port.allTraffic(),
+    //   'Allow all traffic from EC2 instances on RDS connection security group'
+    // );
+
+    new cdk.CfnOutput(this, 'dbEndpoint', {
+      value: dbInstance.instanceEndpoint.hostname,
+    });
+
+    new cdk.CfnOutput(this, 'secretName', {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
+      value: dbInstance.secret?.secretName!,
+    });
+
+    /****************************************************************
+     * Admin Node
+     ****************************************************************/
+    const userDataScript = readFileSync('./lib/user-data.sh', 'utf8');
+
+    const adminNode = new ec2.Instance(this, 'Armada-AdminNode', {
+      vpc,
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PUBLIC,
+      },
+      instanceType: ec2.InstanceType.of(
+        ec2.InstanceClass.T2,
+        ec2.InstanceSize.SMALL
+      ),
+      availabilityZone: 'us-east-1a',
+      securityGroup: adminNodeSecurityGroup,
+      machineImage: ec2.MachineImage.latestAmazonLinux(),
+      keyName: 'armada-admin-node',
+    });
+
+    adminNode.addUserData(userDataScript);
+
+    // RDS post-installation repo
+    // https://github.com/team-armada/rds-post-installation
+
+    //TODO: create IAM roles for EC2 instance to talk to RDS and SecretsManager
+
+    /****************************************************************
+     * ECS Admin
+     ****************************************************************/
+
+    // DATABASE_URL="postgresql://joey:Joey@localhost:5432/Armada?schema=public"
 
     // db-secrets
     // username
@@ -297,15 +562,19 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     const taskDefinition = new ecs.Ec2TaskDefinition(this, 'TaskDef');
 
     taskDefinition.addContainer('DefaultContainer', {
-      image: ecs.ContainerImage.fromRegistry('armada-application'),
+      image: ecs.ContainerImage.fromRegistry('jdguillaume/armada-application'),
       memoryLimitMiB: 512,
       environment: {
-        DATABASE_URL: dbInstance.ConnectionURL,
+        AWS_REGION: cdk.Stack.of(this).region,
+        AWS_IAM_ACCESS_KEY_ID: accessKey.valueAsString,
+        AWS_IAM_SECRET_ACCESS_KEY: secretKey.valueAsString,
+        DATABASE_URL: `postgresql://postgres:${databaseCredentialsSecret.secretValue.unsafeUnwrap()}@${
+          dbInstance.dbInstanceEndpointAddress
+        }:${dbInstance.dbInstanceEndpointPort}/Armada?schema=public`,
+        PORT: '3000',
+        USER_POOL_ID: cognitoUserPool.userPoolId,
+        USER_POOL_WEB_CLIENT_ID: cognitoClient.userPoolClientId,
       },
-      environmentFiles: [
-        // list of environment files hosted either on local disk or S3
-        ecs.EnvironmentFile.fromAsset('./demo-env-file.env'),
-      ],
     });
 
     // Instantiate an Amazon ECS Service
