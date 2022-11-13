@@ -197,18 +197,18 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     });
 
     // TODO: eventually we want to use port 443 and HTTPS
-    const listener = alb.addListener('ALB-Listener', {
-      port: 80, // listens for requests on port 80
-      open: true, // Allow CDK to automatically create security group rule to allow traffic on port 80
+    // const listener = alb.addListener('ALB-Listener', {
+    //   port: 80, // listens for requests on port 80
+    //   open: true, // Allow CDK to automatically create security group rule to allow traffic on port 80
 
-      protocol: elbv2.ApplicationProtocol.HTTP,
+    //   protocol: elbv2.ApplicationProtocol.HTTP,
 
-      // Specify the default action for the ALB's Listener on Port 80
-      defaultAction: elbv2.ListenerAction.fixedResponse(404, {
-        contentType: 'text/plain',
-        messageBody: `The developer environment you've requested could not be found.`,
-      }),
-    });
+    //   // Specify the default action for the ALB's Listener on Port 80
+    //   defaultAction: elbv2.ListenerAction.fixedResponse(404, {
+    //     contentType: 'text/plain',
+    //     messageBody: `The developer environment you've requested could not be found.`,
+    //   }),
+    // });
 
     // Create CFN Output
     new cdk.CfnOutput(this, 'ALB-DNS-name', {
@@ -555,11 +555,19 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     // Create our admin app task definition
     // Interpolate all the values that are necessary
 
-    const taskDefinition = new ecs.Ec2TaskDefinition(this, 'TaskDef');
+    const taskDefinition = new ecs.Ec2TaskDefinition(this, 'Armada-App');
 
-    taskDefinition.addContainer('DefaultContainer', {
+    const armadaApp = taskDefinition.addContainer('armada-app', {
       image: ecs.ContainerImage.fromRegistry('jdguillaume/armada-application'),
       memoryLimitMiB: 512,
+      essential: true,
+      portMappings: [
+        {
+          hostPort: 0,
+          containerPort: 5432,
+          protocol: ecs.Protocol.TCP,
+        },
+      ],
       environment: {
         AWS_REGION: cdk.Stack.of(this).region,
         AWS_IAM_ACCESS_KEY_ID: accessKey.valueAsString,
@@ -575,6 +583,21 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       },
     });
 
+    const armadaAppNginx = taskDefinition.addContainer('armada-app-nginx', {
+      image: ecs.ContainerImage.fromRegistry('jdguillaume/armada-app-nginx'),
+      memoryLimitMiB: 256,
+      essential: true,
+      portMappings: [
+        {
+          hostPort: 0,
+          containerPort: 80,
+          protocol: ecs.Protocol.TCP,
+        },
+      ],
+    });
+
+    armadaAppNginx.addLink(armadaApp);
+
     // Instantiate an Amazon ECS Service
     const ecsService = new ecs.Ec2Service(this, 'Service', {
       cluster,
@@ -589,6 +612,29 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       launchTarget: new tasks.EcsEc2LaunchTarget({
         placementStrategies: [ecs.PlacementStrategy.spreadAcrossInstances()],
       }),
+    });
+
+    const armadaAppTargetGroup = new elbv2.ApplicationTargetGroup(
+      this,
+      'ArmadaApp',
+      {
+        healthCheck: {
+          path: '/',
+        },
+        port: 80,
+        protocol: elbv2.ApplicationProtocol.HTTP,
+        vpc,
+      }
+    );
+
+    const listener = alb.addListener('ALB-Listener', {
+      port: 80, // listens for requests on port 80
+      open: true, // Allow CDK to automatically create security group rule to allow traffic on port 80
+
+      protocol: elbv2.ApplicationProtocol.HTTP,
+
+      // Specify the default action for the ALB's Listener on Port 80
+      defaultAction: elbv2.ListenerAction.forward([armadaAppTargetGroup]),
     });
   }
 }
