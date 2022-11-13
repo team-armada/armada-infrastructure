@@ -532,7 +532,6 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       availabilityZone: 'us-east-1a',
       securityGroup: adminNodeSecurityGroup,
       machineImage: ec2.MachineImage.latestAmazonLinux(),
-      keyName: 'armada-admin-node',
     });
 
     adminNode.addUserData(userDataScript);
@@ -565,9 +564,11 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
         AWS_REGION: cdk.Stack.of(this).region,
         AWS_IAM_ACCESS_KEY_ID: accessKey.valueAsString,
         AWS_IAM_SECRET_ACCESS_KEY: secretKey.valueAsString,
-        DATABASE_URL: `postgresql://postgres:${databaseCredentialsSecret.secretValue.unsafeUnwrap()}@${
-          dbInstance.dbInstanceEndpointAddress
-        }:${dbInstance.dbInstanceEndpointPort}/Armada?schema=public`,
+        DATABASE_URL: `postgresql://postgres:${databaseCredentialsSecret
+          .secretValueFromJson('password')
+          .unsafeUnwrap()}@${dbInstance.dbInstanceEndpointAddress}:${
+          dbInstance.dbInstanceEndpointPort
+        }/Armada?schema=public`,
         PORT: '3000',
         USER_POOL_ID: cognitoUserPool.userPoolId,
         USER_POOL_WEB_CLIENT_ID: cognitoClient.userPoolClientId,
