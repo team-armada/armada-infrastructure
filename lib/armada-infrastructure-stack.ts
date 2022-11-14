@@ -17,8 +17,13 @@ import * as cognito from 'aws-cdk-lib/aws-cognito';
 import { CfnParameter, Duration } from 'aws-cdk-lib';
 import { readFileSync } from 'fs';
 
-export class ArmadaInfrastructureStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+interface ArmadaInfraStackProps extends cdk.StackProps {
+  accessKeyId: string | undefined, 
+  secretAccessKeyId: string | undefined
+}
+
+export class ArmadaInfraStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props?: ArmadaInfraStackProps) {
     super(scope, id, props);
 
     /****************************************************************
