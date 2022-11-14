@@ -42,6 +42,12 @@ cdk bootstrap
 cdk deploy
 ```
 
+### Deploy infrastructure with parameters 
+```sh
+cdk deploy --parameters accessKey=<YOUR_IAM_ACCESS_KEY_ID> \
+           --parameters secretKey=<YOUR_IAM_SECRET_ACCESS_KEY>
+```
+
 
 ### Useful commands
 * `npm run build`   compile typescript to js
