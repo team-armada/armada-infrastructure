@@ -18,12 +18,13 @@ import { CfnParameter, Duration } from 'aws-cdk-lib';
 import { readFileSync } from 'fs';
 
 interface ArmadaInfraStackProps extends cdk.StackProps {
-  accessKeyId: string | undefined, 
-  secretAccessKeyId: string | undefined
+  accessKeyId: string | undefined; 
+  secretAccessKeyId: string | undefined;
+  region: string | undefined;
 }
 
 export class ArmadaInfraStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: ArmadaInfraStackProps) {
+  constructor(scope: Construct, id: string, props: ArmadaInfraStackProps) {
     super(scope, id, props);
 
     /****************************************************************
@@ -532,7 +533,7 @@ export class ArmadaInfraStack extends cdk.Stack {
     // Secrets manager
     const adminNodeRole = new iam.Role(this, 'Admin-Node-Access-Role', {
       assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com', {
-        region: 'us-east-1a'
+        region: props.region
       }),
       description: "Allow EC2 to access AWS Secrets Manager and RDS",
       managedPolicies: [
@@ -601,8 +602,8 @@ export class ArmadaInfraStack extends cdk.Stack {
       ],
       environment: {
         AWS_REGION: cdk.Stack.of(this).region,
-        AWS_IAM_ACCESS_KEY_ID: accessKey.valueAsString,
-        AWS_IAM_SECRET_ACCESS_KEY: secretKey.valueAsString,
+        AWS_IAM_ACCESS_KEY_ID: props.accessKeyId as string,
+        AWS_IAM_SECRET_ACCESS_KEY: props.secretAccessKeyId as string,
         DATABASE_URL: `postgresql://postgres:${databaseCredentialsSecret
           .secretValueFromJson('password')
           .unsafeUnwrap()}@${dbInstance.dbInstanceEndpointAddress}:${
