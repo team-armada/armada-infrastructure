@@ -386,7 +386,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       /* User verification
         - When a user signs up, email and SMS messages are used to verify their
           account and contact methods.
-        - The following code snippet configures a user pool with properties to 
+        - The following code snippet configures a user pool with properties to
           these verification messages:
       */
       userVerification: {
@@ -518,9 +518,28 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     /****************************************************************
      * Admin Node
      ****************************************************************/
+    enum ManagedPolicies {
+      SecretsManagerReadWrite = "SecretsManagerReadWrite",
+      AmazonRDSFullAccess = "AmazonRDSFullAccess",
+      AmazonCognitoPowerUser = "AmazonCognitoPowerUser",
+    }
+
+    // Secrets manager
+    const adminNodeRole = new iam.Role(this, 'Admin-Node-Access-Role', {
+      assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com', {
+        region: 'us-east-1a'
+      }),
+      description: "Allow EC2 to access AWS Secrets Manager and RDS",
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName(ManagedPolicies.SecretsManagerReadWrite),
+        iam.ManagedPolicy.fromAwsManagedPolicyName(ManagedPolicies.AmazonRDSFullAccess),
+        iam.ManagedPolicy.fromAwsManagedPolicyName(ManagedPolicies.AmazonCognitoPowerUser),
+      ]
+    });
+
     const userDataScript = readFileSync('./lib/user-data.sh', 'utf8');
 
-    const adminNode = new ec2.Instance(this, 'Armada-AdminNode', {
+    const adminNode =  new ec2.Instance(this, "Armada-AdminNode", {
       vpc,
       vpcSubnets: {
         subnetType: ec2.SubnetType.PUBLIC,
@@ -529,12 +548,19 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
         ec2.InstanceClass.T2,
         ec2.InstanceSize.SMALL
       ),
-      availabilityZone: 'us-east-1a',
+      role: adminNodeRole,
+      availabilityZone: "us-east-1a",
       securityGroup: adminNodeSecurityGroup,
-      machineImage: ec2.MachineImage.latestAmazonLinux(),
+      machineImage: new ec2.AmazonLinuxImage({
+        generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
+      }),
+      keyName: "armada-admin-node",
     });
 
     adminNode.addUserData(userDataScript);
+    adminNode.node.addDependency(dbInstance);
+
+
 
     // RDS post-installation repo
     // https://github.com/team-armada/rds-post-installation
