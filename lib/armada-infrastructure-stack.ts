@@ -21,24 +21,13 @@ interface ArmadaInfraStackProps extends cdk.StackProps {
   accessKeyId: string | undefined; 
   secretAccessKeyId: string | undefined;
   region: string | undefined;
+  availabilityZone: string | undefined;
+  adminNodeKeyPairName: string | undefined;
 }
 
 export class ArmadaInfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: ArmadaInfraStackProps) {
     super(scope, id, props);
-
-    /****************************************************************
-     * CDK Deploy Variables
-     ****************************************************************/
-    const accessKey = new CfnParameter(this, 'accessKey', {
-      type: 'String',
-      description: 'Please enter your access key id.',
-    });
-
-    const secretKey = new CfnParameter(this, 'secretKey', {
-      type: 'String',
-      description: 'Please enter your your secret key.',
-    });
 
     /****************************************************************
      * Virtual Private Cloud (VPC)
@@ -488,7 +477,7 @@ export class ArmadaInfraStack extends cdk.Stack {
         ec2.InstanceClass.BURSTABLE3,
         ec2.InstanceSize.MICRO
       ),
-      availabilityZone: 'us-east-1a',
+      availabilityZone: props.availabilityZone,
       securityGroups: [rdsSecurityGroup],
       multiAz: false,
       allocatedStorage: 100,
@@ -555,12 +544,12 @@ export class ArmadaInfraStack extends cdk.Stack {
         ec2.InstanceSize.SMALL
       ),
       role: adminNodeRole,
-      availabilityZone: "us-east-1a",
+      availabilityZone: props.availabilityZone,
       securityGroup: adminNodeSecurityGroup,
       machineImage: new ec2.AmazonLinuxImage({
         generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
       }),
-      keyName: "armada-admin-node",
+      keyName: props.adminNodeKeyPairName,
     });
 
     adminNode.addUserData(userDataScript);
