@@ -572,20 +572,20 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     // Create our admin app task definition
     // Interpolate all the values that are necessary
 
-
-
     const taskDefinition = new ecs.Ec2TaskDefinition(this, 'Armada-App', {
       executionRole: new iam.Role(this, 'taskExecutionRole', {
-        description: "ecsTaskExecutionRole", 
+        description: 'ecsTaskExecutionRole',
         managedPolicies: [
           {
-            managedPolicyArn: "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-          }, 
+            managedPolicyArn:
+              'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy',
+          },
           {
-            managedPolicyArn: "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole"
-          }
+            managedPolicyArn:
+              'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole',
+          },
         ],
-        assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com')
+        assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
       }),
 
       taskRole: new iam.Role(this, 'ArmadaAppECSPermission', {
@@ -606,6 +606,10 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
           {
             managedPolicyArn: 'arn:aws:iam::aws:policy/AWSLambda_FullAccess',
           },
+          {
+            managedPolicyArn:
+              'arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess',
+          },
         ],
         inlinePolicies: {
           PassRole: new iam.PolicyDocument({
@@ -613,6 +617,18 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
               new iam.PolicyStatement({
                 actions: ['iam:PassRole'],
                 effect: iam.Effect.ALLOW,
+                resources: ['*'],
+              }),
+            ],
+          }),
+          Assume: new iam.PolicyDocument({
+            statements: [
+              new iam.PolicyStatement({
+                actions: ['sts:AssumeRole'],
+                effect: iam.Effect.ALLOW,
+                principals: [
+                  new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
+                ],
                 resources: ['*'],
               }),
             ],
