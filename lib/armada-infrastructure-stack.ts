@@ -16,7 +16,7 @@ import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import { CfnParameter, Duration } from 'aws-cdk-lib';
 import { readFileSync } from 'fs';
-import { ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import { PolicyDocument, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 
 export class ArmadaInfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -46,9 +46,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
 
     // Secrets manager
     const secretsManagerRole = new iam.Role(this, 'Admin-Node-Access-Role', {
-      assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com', {
-        region: 'us-east-1a',
-      }),
+      assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
       description: 'Allow EC2 to access AWS Secrets Manager and RDS',
       managedPolicies: [
         iam.ManagedPolicy.fromAwsManagedPolicyName(
@@ -511,7 +509,6 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
         ec2.InstanceClass.BURSTABLE3,
         ec2.InstanceSize.MICRO
       ),
-      availabilityZone: 'us-east-1a',
       securityGroups: [rdsSecurityGroup],
       multiAz: false,
       allocatedStorage: 100,
@@ -571,66 +568,76 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     // Create our admin app task definition
     // Interpolate all the values that are necessary
 
-    const taskDefinition = new ecs.Ec2TaskDefinition(this, 'Armada-App', {
-      executionRole: new iam.Role(this, 'taskExecutionRole', {
-        description: 'ecsTaskExecutionRole',
-        managedPolicies: [
-          {
-            managedPolicyArn:
-              'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy',
-          },
-          {
-            managedPolicyArn:
-              'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole',
-          },
-        ],
-        assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
-      }),
+    const ECSPolicies = new PolicyDocument({
+      statements: [
+        // Resolve Unable to assume role and validate the specified targetGroupArn. Please verify that the ECS service role being passed has the proper permissions.
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'elasticloadbalancing:Describe*',
+            'elasticloadbalancing:DeregisterInstancesFromLoadBalancer',
+            'elasticloadbalancing:RegisterInstancesWithLoadBalancer',
+            'ec2:Describe*',
+            'ec2:AuthorizeSecurityGroupIngress',
+          ],
+          resources: ['*'],
+        }),
 
-      taskRole: new iam.Role(this, 'ArmadaAppECSPermission', {
-        description: 'Allow EC2 to access AWS Secrets Manager and RDS',
+        // Give ECS Administrator Access
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['ecs:*'],
+          resources: ['*'],
+        }),
+
+        // Give ECS Tasks Administrator Access
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['iam:PassRole'],
+          resources: ['*'],
+        }),
+
+        // Give ECS Full Access to RDS, Cognito, ECS, Lambda, and Elastic Load Balancing
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'rds:*',
+            'cognito-idp:*',
+            'ecs:*',
+            'lambda:*',
+            'elasticloadbalancing:*',
+          ],
+          resources: ['*'],
+        }),
+
+        // Allow ECS Tasks to Assume a Role
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['sts:AssumeRole'],
+          resources: ['*'],
+        }),
+      ],
+    });
+
+    const taskDefinition = new ecs.Ec2TaskDefinition(this, 'Armada-App', {
+      executionRole: new iam.Role(this, 'TaskExecutionRole', {
+        assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
         managedPolicies: [
-          {
-            managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonRDSFullAccess',
-          },
-          {
-            managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonCognitoPowerUser',
-          },
-          {
-            managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonESCognitoAccess',
-          },
-          {
-            managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonECS_FullAccess',
-          },
-          {
-            managedPolicyArn: 'arn:aws:iam::aws:policy/AWSLambda_FullAccess',
-          },
-          {
-            managedPolicyArn:
-              'arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess',
-          },
+          iam.ManagedPolicy.fromAwsManagedPolicyName(
+            'service-role/AmazonECSTaskExecutionRolePolicy'
+          ),
+        ],
+      }),
+      taskRole: new iam.Role(this, 'TaskRole', {
+        assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
+        managedPolicies: [
+          iam.ManagedPolicy.fromAwsManagedPolicyName(
+            'service-role/AmazonECSTaskExecutionRolePolicy'
+          ),
         ],
         inlinePolicies: {
-          PassRole: new iam.PolicyDocument({
-            statements: [
-              new iam.PolicyStatement({
-                actions: ['iam:PassRole'],
-                effect: iam.Effect.ALLOW,
-                resources: ['*'],
-              }),
-            ],
-          }),
-          Assume: new iam.PolicyDocument({
-            statements: [
-              new iam.PolicyStatement({
-                actions: ['sts:AssumeRole'],
-                effect: iam.Effect.ALLOW,
-                resources: ['*'],
-              }),
-            ],
-          }),
+          ECSPolicies,
         },
-        assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com'),
       }),
     });
 
