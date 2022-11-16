@@ -572,7 +572,22 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     // Create our admin app task definition
     // Interpolate all the values that are necessary
 
+
+
     const taskDefinition = new ecs.Ec2TaskDefinition(this, 'Armada-App', {
+      executionRole: new iam.Role(this, 'taskExecutionRole', {
+        description: "ecsTaskExecutionRole", 
+        managedPolicies: [
+          {
+            managedPolicyArn: "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+          }, 
+          {
+            managedPolicyArn: "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole"
+          }
+        ],
+        assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com')
+      }),
+
       taskRole: new iam.Role(this, 'ArmadaAppECSPermission', {
         description: 'Allow EC2 to access AWS Secrets Manager and RDS',
         managedPolicies: [
