@@ -541,7 +541,6 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
         ec2.InstanceClass.T2,
         ec2.InstanceSize.SMALL
       ),
-      availabilityZone: 'us-east-1a',
       securityGroup: adminNodeSecurityGroup,
       machineImage: new ec2.AmazonLinuxImage({
         generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
@@ -626,9 +625,6 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
               new iam.PolicyStatement({
                 actions: ['sts:AssumeRole'],
                 effect: iam.Effect.ALLOW,
-                principals: [
-                  new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
-                ],
                 resources: ['*'],
               }),
             ],
