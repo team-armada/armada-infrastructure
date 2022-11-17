@@ -19,35 +19,66 @@ import { CfnParameter, Duration } from 'aws-cdk-lib';
 import { readFileSync } from 'fs';
 import { PolicyDocument } from 'aws-cdk-lib/aws-iam';
 
-export class ArmadaInfrastructureStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+interface ArmadaInfraStackProps extends cdk.StackProps {
+  accessKeyId: string | undefined;
+  secretAccessKeyId: string | undefined;
+  region: string | undefined;
+  availabilityZone: string | undefined;
+  keyPairName: string | undefined;
+}
+
+enum ManagedPolicies {
+  SecretsManagerReadWrite = 'SecretsManagerReadWrite',
+  AmazonRDSFullAccess = 'AmazonRDSFullAccess',
+  AmazonCognitoPowerUser = 'AmazonCognitoPowerUser',
+}
+
+export class ArmadaInfraStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props?: ArmadaInfraStackProps) {
     super(scope, id, props);
 
     /****************************************************************
-     * CDK Deploy Variables
+     * Check for Environmental Variables
      ****************************************************************/
-    const accessKey = new CfnParameter(this, 'accessKey', {
-      type: 'String',
-      description: 'Please enter your access key id.',
-    });
+    if (!props?.accessKeyId) {
+      throw new Error(
+        'Please set your access key in the environmental variables using: AWS_ACCESS_KEY_ID.'
+      );
+    }
 
-    const secretKey = new CfnParameter(this, 'secretKey', {
-      type: 'String',
-      description: 'Please enter your your secret key.',
-    });
+    if (!props?.secretAccessKeyId) {
+      throw new Error(
+        'Please set your secret key in the environmental variables using: AWS_SECRET_ACCESS_KEY.'
+      );
+    }
+
+    if (!props?.region) {
+      throw new Error(
+        'Please set your default region in the environmental variables using: AWS_DEFAULT_REGION.'
+      );
+    }
+
+    if (!props?.availabilityZone) {
+      throw new Error(
+        'Please set your default availability zone in the environmental variables using: AWS_AVAILABILITY_ZONE.'
+      );
+    }
+
+    if (!props?.keyPairName) {
+      throw new Error(
+        'Please set a default key pair to be used with admin node that manages RDS using: ADMIN_NODE_KEY_PAIR_NAME.'
+      );
+    }
 
     /****************************************************************
      * Access Roles
      ****************************************************************/
 
-    enum ManagedPolicies {
-      SecretsManagerReadWrite = 'SecretsManagerReadWrite',
-      AmazonRDSFullAccess = 'AmazonRDSFullAccess',
-    }
-
     // Secrets manager
-    const secretsManagerRole = new iam.Role(this, 'Admin-Node-Access-Role', {
-      assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+    const adminNodeRole = new iam.Role(this, 'Admin-Node-Access-Role', {
+      assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com', {
+        region: props.region,
+      }),
       description: 'Allow EC2 to access AWS Secrets Manager and RDS',
       managedPolicies: [
         iam.ManagedPolicy.fromAwsManagedPolicyName(
@@ -56,9 +87,9 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
         iam.ManagedPolicy.fromAwsManagedPolicyName(
           ManagedPolicies.AmazonRDSFullAccess
         ),
-        {
-          managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonCognitoPowerUser',
-        },
+        iam.ManagedPolicy.fromAwsManagedPolicyName(
+          ManagedPolicies.AmazonCognitoPowerUser
+        ),
       ],
     });
 
@@ -168,7 +199,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       role: new iam.Role(this, 'ec2AccessRole', {
         assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
       }),
-      keyName: 'armada-admin-node',
+      keyName: props.keyPairName,
     });
 
     /****************************************************************
@@ -182,10 +213,6 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       desiredCapacity: 1,
       maxCapacity: 10,
     });
-
-    // asg.scaleOnCpuUtilization('cpu-util-scaling', {
-    //   targetUtilizationPercent: 50,
-    // });
 
     /****************************************************************
      * Elastic Container Service
@@ -251,25 +278,6 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       loadBalancerName: 'ArmadaLoadBalancer',
     });
 
-    // TODO: eventually we want to use port 443 and HTTPS
-    // const listener = alb.addListener('ALB-Listener', {
-    //   port: 80, // listens for requests on port 80
-    //   open: true, // Allow CDK to automatically create security group rule to allow traffic on port 80
-
-    //   protocol: elbv2.ApplicationProtocol.HTTP,
-
-    //   // Specify the default action for the ALB's Listener on Port 80
-    //   defaultAction: elbv2.ListenerAction.fixedResponse(404, {
-    //     contentType: 'text/plain',
-    //     messageBody: `The developer environment you've requested could not be found.`,
-    //   }),
-    // });
-
-    // Create CFN Output
-    new cdk.CfnOutput(this, 'ALB-DNS-name', {
-      value: alb.loadBalancerDnsName,
-    });
-
     /****************************************************************
      * Elastic File System
      ****************************************************************/
@@ -326,7 +334,6 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
           managedPolicyArn:
             'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole',
         },
-
         {
           managedPolicyArn:
             'arn:aws:iam::aws:policy/AmazonElasticFileSystemClientFullAccess',
@@ -384,11 +391,6 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
           required: true,
           mutable: true,
         },
-        // preferredUsername: {
-        //   required: false,
-        //   mutable: true
-        // },
-        // to be updated when user sets up profile
         givenName: {
           required: true,
           mutable: true,
@@ -397,22 +399,6 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
           required: true,
           mutable: true,
         },
-        // timezone: {
-        //   required: false,
-        //   mutable: true
-        // },
-        // profilePage: {
-        //   required: false,
-        //   mutable: true
-        // },
-        // lastUpdateTime: {
-        //   required: false,
-        //   mutable: true
-        // },
-        // website: {
-        //   required: false,
-        //   mutable: true
-        // },
         profilePicture: {
           required: false,
           mutable: true,
@@ -506,17 +492,6 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       }
     );
 
-    // lets output a few properties to help use find the credentials
-    // new cdk.CfnOutput(this, 'Secret Name', {
-    //   value: databaseCredentialsSecret.secretName,
-    // });
-    // new cdk.CfnOutput(this, 'Secret ARN', {
-    //   value: databaseCredentialsSecret.secretArn,
-    // });
-    // new cdk.CfnOutput(this, 'Secret Full ARN', {
-    //   value: databaseCredentialsSecret.secretFullArn || '',
-    // });
-
     // next, create a new string parameter to be used
     new ssm.StringParameter(this, 'DBCredentialsArn', {
       parameterName: `database-credentials-arn`,
@@ -537,6 +512,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
         ec2.InstanceClass.BURSTABLE3,
         ec2.InstanceSize.MICRO
       ),
+      availabilityZone: props.availabilityZone,
       securityGroups: [rdsSecurityGroup],
       multiAz: false,
       allocatedStorage: 100,
@@ -566,12 +542,13 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
         ec2.InstanceClass.T2,
         ec2.InstanceSize.SMALL
       ),
+      role: adminNodeRole,
+      availabilityZone: props.availabilityZone,
       securityGroup: adminNodeSecurityGroup,
       machineImage: new ec2.AmazonLinuxImage({
         generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
       }),
-      role: secretsManagerRole,
-      keyName: 'armada-admin-node',
+      keyName: props.keyPairName,
     });
 
     adminNode.addUserData(userDataScript);
@@ -580,21 +557,9 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
     // RDS post-installation repo
     // https://github.com/team-armada/rds-post-installation
 
-    //TODO: create IAM roles for EC2 instance to talk to RDS and SecretsManager
-
     /****************************************************************
      * ECS Admin
      ****************************************************************/
-    // db-secrets
-    // username
-    // password
-
-    // Load Balancer
-    //  - If the route matches cohort-course-user go to that workspace
-    //  - Default Route: Go to Admin App.
-
-    // Create our admin app task definition
-    // Interpolate all the values that are necessary
 
     const ECSPolicies = new PolicyDocument({
       statements: [
@@ -666,9 +631,9 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
         },
       ],
       environment: {
-        AWS_REGION: cdk.Stack.of(this).region,
-        AWS_IAM_ACCESS_KEY_ID: accessKey.valueAsString,
-        AWS_IAM_SECRET_ACCESS_KEY: secretKey.valueAsString,
+        AWS_REGION: props.region,
+        AWS_IAM_ACCESS_KEY_ID: props.accessKeyId,
+        AWS_IAM_SECRET_ACCESS_KEY: props.secretAccessKeyId,
         DATABASE_URL: `postgresql://postgres:${databaseCredentialsSecret
           .secretValueFromJson('password')
           .unsafeUnwrap()}@${dbInstance.dbInstanceEndpointAddress}:${

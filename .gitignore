@@ -11,3 +11,6 @@ cdk.out
 
 # Package Lock
 package-lock.json
+
+# Env Files
+.env
