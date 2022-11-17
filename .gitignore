@@ -6,6 +6,9 @@ node_modules
 .cdk.staging
 cdk.out
 
+# CDK Context
+cdk.context.json
+
 # Mac Files
 .DS_Store
 
