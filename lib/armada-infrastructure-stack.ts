@@ -598,23 +598,20 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
 
     const ECSPolicies = new PolicyDocument({
       statements: [
-        // Resolve Unable to assume role and validate the specified targetGroupArn. Please verify that the ECS service role being passed has the proper permissions.
+        // Give ECS Full Access to RDS, Cognito, ECS, EFS, Lambda, Elastic Load Balancing, EC2
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
           actions: [
-            'elasticloadbalancing:Describe*',
-            'elasticloadbalancing:DeregisterInstancesFromLoadBalancer',
-            'elasticloadbalancing:RegisterInstancesWithLoadBalancer',
-            'ec2:Describe*',
-            'ec2:AuthorizeSecurityGroupIngress',
+            'rds:*',
+            'cognito-idp:*',
+            'cognito-identity:*',
+            'cognito-sync:*',
+            'ecs:*',
+            'lambda:*',
+            'elasticloadbalancing:*',
+            'ec2:*',
+            'efs:*',
           ],
-          resources: ['*'],
-        }),
-
-        // Give ECS Administrator Access
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          actions: ['ecs:*'],
           resources: ['*'],
         }),
 
@@ -622,19 +619,6 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
           actions: ['iam:PassRole'],
-          resources: ['*'],
-        }),
-
-        // Give ECS Full Access to RDS, Cognito, ECS, Lambda, and Elastic Load Balancing
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          actions: [
-            'rds:*',
-            'cognito-idp:*',
-            'ecs:*',
-            'lambda:*',
-            'elasticloadbalancing:*',
-          ],
           resources: ['*'],
         }),
 
@@ -662,6 +646,7 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
           iam.ManagedPolicy.fromAwsManagedPolicyName(
             'service-role/AmazonECSTaskExecutionRolePolicy'
           ),
+          iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess'),
         ],
         inlinePolicies: {
           ECSPolicies,
