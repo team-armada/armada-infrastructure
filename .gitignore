@@ -11,3 +11,5 @@ cdk.out
 
 # Package Lock
 package-lock.json
+
+notes.md
