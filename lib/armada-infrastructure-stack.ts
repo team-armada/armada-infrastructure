@@ -14,9 +14,10 @@ import * as tasks from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import { CfnParameter, Duration } from 'aws-cdk-lib';
 import { readFileSync } from 'fs';
-import { PolicyDocument, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import { PolicyDocument } from 'aws-cdk-lib/aws-iam';
 
 export class ArmadaInfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -182,9 +183,9 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
       maxCapacity: 10,
     });
 
-    asg.scaleOnCpuUtilization('cpu-util-scaling', {
-      targetUtilizationPercent: 50,
-    });
+    // asg.scaleOnCpuUtilization('cpu-util-scaling', {
+    //   targetUtilizationPercent: 50,
+    // });
 
     /****************************************************************
      * Elastic Container Service
@@ -212,6 +213,33 @@ export class ArmadaInfrastructureStack extends cdk.Stack {
 
     // Attach Security group to ECS cluster
     cluster.addAsgCapacityProvider(capacityProvider);
+
+    // Scale up based on ECS Memory Reservation for the ECS-Cluster
+    asg.scaleOnMetric('ScaleUpOnMemoryReservation', {
+      metric: new cloudwatch.Metric({
+        namespace: 'AWS/ECS',
+        metricName: 'MemoryReservation',
+        dimensionsMap: {
+          ClusterName: 'ECS-Cluster',
+        },
+        statistic: 'Average',
+      }),
+      // Add 1 instance if memory reservation is greater than 75%
+      scalingSteps: [
+        {
+          lower: 60,
+          change: 1,
+        },
+        // Remove 1 instance if memory reservation is less than 15%
+        {
+          upper: 15,
+          change: -1,
+        },
+      ],
+
+      adjustmentType: autoscaling.AdjustmentType.CHANGE_IN_CAPACITY,
+      cooldown: cdk.Duration.seconds(60),
+    });
 
     /****************************************************************
      * Application Load Balancer
