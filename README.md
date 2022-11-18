@@ -5,6 +5,18 @@
 
 ![Armada infra v1](armada-infra-v1.png)
 
+## Environment variables 
+To deploy armada you must add the following environment variables to your `~/.zshrc`, `~/.bashrc` or add them to a `.env` file. 
+```sh
+  ADMIN_NODE_KEY_PAIR_NAME='my-us-east-2-key-pair'
+  AWS_DEFAULT_REGION='us-east-2'
+  AWS_AVAILABILITY_ZONE='us-east-2a'
+  AWS_ACCESS_KEY_ID=""
+  AWS_SECRET_ACCESS_KEY=""
+  CDK_DEFAULT_ACCOUNT="your default aws account id"
+  CDK_DEFAULT_REGION="us-east-2"
+```
+
 ## AWS CloudFormation, AWS CDK and Terraform Comparison Chart
 
 | Variables               | Terraform                                    | CloudFormation      | Cloud Development Kit                  |
@@ -23,7 +35,18 @@
 
 ---
 
-## Running the 
+## Environment Variables
+```sh
+ADMIN_NODE_KEY_PAIR_NAME='my-us-east-2-key-pair'
+AWS_DEFAULT_REGION='us-east-2'
+AWS_AVAILABILITY_ZONE='us-east-2a'
+AWS_ACCESS_KEY_ID=""
+AWS_SECRET_ACCESS_KEY=""
+CDK_DEFAULT_ACCOUNT="your default aws account id"
+CDK_DEFAULT_REGION="us-east-2"
+```
+
+## Running the app
 
 > NOTE: You should have an AWS user with admin permissions. 
 

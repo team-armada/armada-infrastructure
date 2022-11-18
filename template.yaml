@@ -1,0 +1,788 @@
+Resources:
+  TheVPC92636AB0:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: ArmadaInfrastructureStack/TheVPC
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/Resource
+  TheVPCpublicsubnet1Subnet1Subnet6D9CD7AC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: TheVPC92636AB0
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: public-subnet-1
+        - Key: aws-cdk:subnet-type
+          Value: Public
+        - Key: Name
+          Value: ArmadaInfrastructureStack/TheVPC/public-subnet-1Subnet1
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/public-subnet-1Subnet1/Subnet
+  TheVPCpublicsubnet1Subnet1RouteTable9E37FA5A:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: TheVPC92636AB0
+      Tags:
+        - Key: Name
+          Value: ArmadaInfrastructureStack/TheVPC/public-subnet-1Subnet1
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/public-subnet-1Subnet1/RouteTable
+  TheVPCpublicsubnet1Subnet1RouteTableAssociation218D2E10:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: TheVPCpublicsubnet1Subnet1RouteTable9E37FA5A
+      SubnetId:
+        Ref: TheVPCpublicsubnet1Subnet1Subnet6D9CD7AC
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/public-subnet-1Subnet1/RouteTableAssociation
+  TheVPCpublicsubnet1Subnet1DefaultRoute6E2FAF36:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: TheVPCpublicsubnet1Subnet1RouteTable9E37FA5A
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: TheVPCIGWFA25CC08
+    DependsOn:
+      - TheVPCVPCGWC9B93E30
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/public-subnet-1Subnet1/DefaultRoute
+  TheVPCpublicsubnet1Subnet2Subnet69EB65DC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: TheVPC92636AB0
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: public-subnet-1
+        - Key: aws-cdk:subnet-type
+          Value: Public
+        - Key: Name
+          Value: ArmadaInfrastructureStack/TheVPC/public-subnet-1Subnet2
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/public-subnet-1Subnet2/Subnet
+  TheVPCpublicsubnet1Subnet2RouteTable1140F317:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: TheVPC92636AB0
+      Tags:
+        - Key: Name
+          Value: ArmadaInfrastructureStack/TheVPC/public-subnet-1Subnet2
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/public-subnet-1Subnet2/RouteTable
+  TheVPCpublicsubnet1Subnet2RouteTableAssociation26C4ECF2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: TheVPCpublicsubnet1Subnet2RouteTable1140F317
+      SubnetId:
+        Ref: TheVPCpublicsubnet1Subnet2Subnet69EB65DC
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/public-subnet-1Subnet2/RouteTableAssociation
+  TheVPCpublicsubnet1Subnet2DefaultRouteC90BA0A6:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: TheVPCpublicsubnet1Subnet2RouteTable1140F317
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: TheVPCIGWFA25CC08
+    DependsOn:
+      - TheVPCVPCGWC9B93E30
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/public-subnet-1Subnet2/DefaultRoute
+  TheVPCpublicsubnet2Subnet1Subnet0946B06E:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: TheVPC92636AB0
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: public-subnet-2
+        - Key: aws-cdk:subnet-type
+          Value: Public
+        - Key: Name
+          Value: ArmadaInfrastructureStack/TheVPC/public-subnet-2Subnet1
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/public-subnet-2Subnet1/Subnet
+  TheVPCpublicsubnet2Subnet1RouteTable63EFD204:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: TheVPC92636AB0
+      Tags:
+        - Key: Name
+          Value: ArmadaInfrastructureStack/TheVPC/public-subnet-2Subnet1
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/public-subnet-2Subnet1/RouteTable
+  TheVPCpublicsubnet2Subnet1RouteTableAssociationB46279D3:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: TheVPCpublicsubnet2Subnet1RouteTable63EFD204
+      SubnetId:
+        Ref: TheVPCpublicsubnet2Subnet1Subnet0946B06E
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/public-subnet-2Subnet1/RouteTableAssociation
+  TheVPCpublicsubnet2Subnet1DefaultRouteFB0894FA:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: TheVPCpublicsubnet2Subnet1RouteTable63EFD204
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: TheVPCIGWFA25CC08
+    DependsOn:
+      - TheVPCVPCGWC9B93E30
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/public-subnet-2Subnet1/DefaultRoute
+  TheVPCpublicsubnet2Subnet2Subnet180A55C0:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: TheVPC92636AB0
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      CidrBlock: 10.0.3.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: public-subnet-2
+        - Key: aws-cdk:subnet-type
+          Value: Public
+        - Key: Name
+          Value: ArmadaInfrastructureStack/TheVPC/public-subnet-2Subnet2
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/public-subnet-2Subnet2/Subnet
+  TheVPCpublicsubnet2Subnet2RouteTableF33E87BF:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: TheVPC92636AB0
+      Tags:
+        - Key: Name
+          Value: ArmadaInfrastructureStack/TheVPC/public-subnet-2Subnet2
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/public-subnet-2Subnet2/RouteTable
+  TheVPCpublicsubnet2Subnet2RouteTableAssociationA40BAF57:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: TheVPCpublicsubnet2Subnet2RouteTableF33E87BF
+      SubnetId:
+        Ref: TheVPCpublicsubnet2Subnet2Subnet180A55C0
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/public-subnet-2Subnet2/RouteTableAssociation
+  TheVPCpublicsubnet2Subnet2DefaultRoute17EB0224:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: TheVPCpublicsubnet2Subnet2RouteTableF33E87BF
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: TheVPCIGWFA25CC08
+    DependsOn:
+      - TheVPCVPCGWC9B93E30
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/public-subnet-2Subnet2/DefaultRoute
+  TheVPCIGWFA25CC08:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: ArmadaInfrastructureStack/TheVPC
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/IGW
+  TheVPCVPCGWC9B93E30:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: TheVPC92636AB0
+      InternetGatewayId:
+        Ref: TheVPCIGWFA25CC08
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/TheVPC/VPCGW
+  armadasecuritygroup6A2A7443:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group for Armada Instance
+      GroupName: Armada Security Group
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+        - CidrIpv6: ::/0
+          Description: Allow all outbound ipv6 traffic by default
+          IpProtocol: "-1"
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: SSH Access
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+        - CidrIp: 0.0.0.0/0
+          Description: HTTP Access
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+        - CidrIp: 0.0.0.0/0
+          Description: HTTPS Access
+          FromPort: 443
+          IpProtocol: tcp
+          ToPort: 443
+        - CidrIp: 0.0.0.0/0
+          Description: Allow Container Access
+          FromPort: 8080
+          IpProtocol: tcp
+          ToPort: 8080
+      VpcId:
+        Ref: TheVPC92636AB0
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/armada-security-group/Resource
+  Repository22E53BBD:
+    Type: AWS::ECR::Repository
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/Repository/Resource
+  ECSClusterArmadaInfrastructureStack504C4FB4:
+    Type: AWS::ECS::Cluster
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/Resource
+  ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityInstanceSecurityGroupC1BF6BA7:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity/InstanceSecurityGroup
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      Tags:
+        - Key: Name
+          Value: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity
+      VpcId:
+        Ref: TheVPC92636AB0
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity/InstanceSecurityGroup/Resource
+  ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityInstanceRole617095A0:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                Fn::Join:
+                  - ""
+                  - - ec2.
+                    - Ref: AWS::URLSuffix
+        Version: "2012-10-17"
+      Tags:
+        - Key: Name
+          Value: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity/InstanceRole/Resource
+  ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityInstanceRoleDefaultPolicy319100B4:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - ecs:DeregisterContainerInstance
+              - ecs:RegisterContainerInstance
+              - ecs:Submit*
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - ECSClusterArmadaInfrastructureStack504C4FB4
+                - Arn
+          - Action:
+              - ecs:Poll
+              - ecs:StartTelemetrySession
+            Condition:
+              ArnEquals:
+                ecs:cluster:
+                  Fn::GetAtt:
+                    - ECSClusterArmadaInfrastructureStack504C4FB4
+                    - Arn
+            Effect: Allow
+            Resource: "*"
+          - Action:
+              - ecr:GetAuthorizationToken
+              - ecs:DiscoverPollEndpoint
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Effect: Allow
+            Resource: "*"
+        Version: "2012-10-17"
+      PolicyName: ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityInstanceRoleDefaultPolicy319100B4
+      Roles:
+        - Ref: ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityInstanceRole617095A0
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity/InstanceRole/DefaultPolicy/Resource
+  ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityInstanceProfile6A8C3D10:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - Ref: ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityInstanceRole617095A0
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity/InstanceProfile
+  ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityLaunchConfig37362B2E:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId:
+        Ref: SsmParameterValueawsserviceecsoptimizedamiamazonlinux2recommendedimageidC96584B6F00A464EAD1953AFF4B05118Parameter
+      InstanceType: t2.micro
+      IamInstanceProfile:
+        Ref: ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityInstanceProfile6A8C3D10
+      SecurityGroups:
+        - Fn::GetAtt:
+            - ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityInstanceSecurityGroupC1BF6BA7
+            - GroupId
+        - Fn::GetAtt:
+            - armadasecuritygroup6A2A7443
+            - GroupId
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+            - ""
+            - - |-
+                #!/bin/bash
+                echo ECS_CLUSTER=
+              - Ref: ECSClusterArmadaInfrastructureStack504C4FB4
+              - |-2
+                 >> /etc/ecs/ecs.config
+                sudo iptables --insert FORWARD 1 --in-interface docker+ --destination 169.254.169.254/32 --jump DROP
+                sudo service iptables save
+                echo ECS_AWSVPC_BLOCK_IMDS=true >> /etc/ecs/ecs.config
+    DependsOn:
+      - ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityInstanceRoleDefaultPolicy319100B4
+      - ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityInstanceRole617095A0
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity/LaunchConfig
+  ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityASGA00567D8:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      MaxSize: "1"
+      MinSize: "1"
+      DesiredCapacity: "1"
+      LaunchConfigurationName:
+        Ref: ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityLaunchConfig37362B2E
+      Tags:
+        - Key: Name
+          PropagateAtLaunch: true
+          Value: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity
+      VPCZoneIdentifier:
+        - Ref: TheVPCpublicsubnet1Subnet1Subnet6D9CD7AC
+        - Ref: TheVPCpublicsubnet1Subnet2Subnet69EB65DC
+        - Ref: TheVPCpublicsubnet2Subnet1Subnet0946B06E
+        - Ref: TheVPCpublicsubnet2Subnet2Subnet180A55C0
+    UpdatePolicy:
+      AutoScalingReplacingUpdate:
+        WillReplace: true
+      AutoScalingScheduledAction:
+        IgnoreUnmodifiedGroupSizeProperties: true
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity/ASG
+  ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityDrainECSHookFunctionServiceRole26B251BE:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Tags:
+        - Key: Name
+          Value: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity/DrainECSHook/Function/ServiceRole/Resource
+  ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityDrainECSHookFunctionServiceRoleDefaultPolicy6A145B90:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - ec2:DescribeHosts
+              - ec2:DescribeInstanceAttribute
+              - ec2:DescribeInstanceStatus
+              - ec2:DescribeInstances
+            Effect: Allow
+            Resource: "*"
+          - Action: autoscaling:CompleteLifecycleAction
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:"
+                  - Ref: AWS::Partition
+                  - ":autoscaling:"
+                  - Ref: AWS::Region
+                  - ":"
+                  - Ref: AWS::AccountId
+                  - :autoScalingGroup:*:autoScalingGroupName/
+                  - Ref: ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityASGA00567D8
+          - Action:
+              - ecs:DescribeContainerInstances
+              - ecs:DescribeTasks
+              - ecs:ListTasks
+              - ecs:UpdateContainerInstancesState
+            Condition:
+              ArnEquals:
+                ecs:cluster:
+                  Fn::GetAtt:
+                    - ECSClusterArmadaInfrastructureStack504C4FB4
+                    - Arn
+            Effect: Allow
+            Resource: "*"
+          - Action:
+              - ecs:ListContainerInstances
+              - ecs:SubmitContainerStateChange
+              - ecs:SubmitTaskStateChange
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - ECSClusterArmadaInfrastructureStack504C4FB4
+                - Arn
+        Version: "2012-10-17"
+      PolicyName: ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityDrainECSHookFunctionServiceRoleDefaultPolicy6A145B90
+      Roles:
+        - Ref: ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityDrainECSHookFunctionServiceRole26B251BE
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity/DrainECSHook/Function/ServiceRole/DefaultPolicy/Resource
+  ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityDrainECSHookFunctionADFB2C89:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          import boto3, json, os, time
+
+          ecs = boto3.client('ecs')
+          autoscaling = boto3.client('autoscaling')
+
+
+          def lambda_handler(event, context):
+            print(json.dumps(dict(event, ResponseURL='...')))
+            cluster = os.environ['CLUSTER']
+            snsTopicArn = event['Records'][0]['Sns']['TopicArn']
+            lifecycle_event = json.loads(event['Records'][0]['Sns']['Message'])
+            instance_id = lifecycle_event.get('EC2InstanceId')
+            if not instance_id:
+              print('Got event without EC2InstanceId: %s', json.dumps(dict(event, ResponseURL='...')))
+              return
+
+            instance_arn = container_instance_arn(cluster, instance_id)
+            print('Instance %s has container instance ARN %s' % (lifecycle_event['EC2InstanceId'], instance_arn))
+
+            if not instance_arn:
+              return
+
+            task_arns = container_instance_task_arns(cluster, instance_arn)
+
+            if task_arns:
+              print('Instance ARN %s has task ARNs %s' % (instance_arn, ', '.join(task_arns)))
+
+            while has_tasks(cluster, instance_arn, task_arns):
+              time.sleep(10)
+
+            try:
+              print('Terminating instance %s' % instance_id)
+              autoscaling.complete_lifecycle_action(
+                  LifecycleActionResult='CONTINUE',
+                  **pick(lifecycle_event, 'LifecycleHookName', 'LifecycleActionToken', 'AutoScalingGroupName'))
+            except Exception as e:
+              # Lifecycle action may have already completed.
+              print(str(e))
+
+
+          def container_instance_arn(cluster, instance_id):
+            """Turn an instance ID into a container instance ARN."""
+            arns = ecs.list_container_instances(cluster=cluster, filter='ec2InstanceId==' + instance_id)['containerInstanceArns']
+            if not arns:
+              return None
+            return arns[0]
+
+          def container_instance_task_arns(cluster, instance_arn):
+            """Fetch tasks for a container instance ARN."""
+            arns = ecs.list_tasks(cluster=cluster, containerInstance=instance_arn)['taskArns']
+            return arns
+
+          def has_tasks(cluster, instance_arn, task_arns):
+            """Return True if the instance is running tasks for the given cluster."""
+            instances = ecs.describe_container_instances(cluster=cluster, containerInstances=[instance_arn])['containerInstances']
+            if not instances:
+              return False
+            instance = instances[0]
+
+            if instance['status'] == 'ACTIVE':
+              # Start draining, then try again later
+              set_container_instance_to_draining(cluster, instance_arn)
+              return True
+
+            task_count = None
+
+            if task_arns:
+              # Fetch details for tasks running on the container instance
+              tasks = ecs.describe_tasks(cluster=cluster, tasks=task_arns)['tasks']
+              if tasks:
+                # Consider any non-stopped tasks as running
+                task_count = sum(task['lastStatus'] != 'STOPPED' for task in tasks) + instance['pendingTasksCount']
+
+            if not task_count:
+              # Fallback to instance task counts if detailed task information is unavailable
+              task_count = instance['runningTasksCount'] + instance['pendingTasksCount']
+
+            print('Instance %s has %s tasks' % (instance_arn, task_count))
+
+            return task_count > 0
+
+          def set_container_instance_to_draining(cluster, instance_arn):
+            ecs.update_container_instances_state(
+                cluster=cluster,
+                containerInstances=[instance_arn], status='DRAINING')
+
+
+          def pick(dct, *keys):
+            """Pick a subset of a dict."""
+            return {k: v for k, v in dct.items() if k in keys}
+      Role:
+        Fn::GetAtt:
+          - ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityDrainECSHookFunctionServiceRole26B251BE
+          - Arn
+      Environment:
+        Variables:
+          CLUSTER:
+            Ref: ECSClusterArmadaInfrastructureStack504C4FB4
+      Handler: index.lambda_handler
+      Runtime: python3.9
+      Tags:
+        - Key: Name
+          Value: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity
+      Timeout: 310
+    DependsOn:
+      - ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityDrainECSHookFunctionServiceRoleDefaultPolicy6A145B90
+      - ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityDrainECSHookFunctionServiceRole26B251BE
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity/DrainECSHook/Function/Resource
+  ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityDrainECSHookFunctionAllowInvokeArmadaInfrastructureStackECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityLifecycleHookDrainHookTopicE03B530387B0751D:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityDrainECSHookFunctionADFB2C89
+          - Arn
+      Principal: sns.amazonaws.com
+      SourceArn:
+        Ref: ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityLifecycleHookDrainHookTopic95703AFB
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity/DrainECSHook/Function/AllowInvoke:ArmadaInfrastructureStackECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityLifecycleHookDrainHookTopicE03B5303
+  ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityDrainECSHookFunctionTopicCC8E9D3C:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: lambda
+      TopicArn:
+        Ref: ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityLifecycleHookDrainHookTopic95703AFB
+      Endpoint:
+        Fn::GetAtt:
+          - ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityDrainECSHookFunctionADFB2C89
+          - Arn
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity/DrainECSHook/Function/Topic/Resource
+  ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityLifecycleHookDrainHookTopic95703AFB:
+    Type: AWS::SNS::Topic
+    Properties:
+      Tags:
+        - Key: Name
+          Value: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity/LifecycleHookDrainHook/Topic/Resource
+  ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityLifecycleHookDrainHookRole4482260D:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: autoscaling.amazonaws.com
+        Version: "2012-10-17"
+      Tags:
+        - Key: Name
+          Value: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity/LifecycleHookDrainHook/Role/Resource
+  ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityLifecycleHookDrainHookRoleDefaultPolicyDDEF63CC:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: sns:Publish
+            Effect: Allow
+            Resource:
+              Ref: ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityLifecycleHookDrainHookTopic95703AFB
+        Version: "2012-10-17"
+      PolicyName: ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityLifecycleHookDrainHookRoleDefaultPolicyDDEF63CC
+      Roles:
+        - Ref: ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityLifecycleHookDrainHookRole4482260D
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity/LifecycleHookDrainHook/Role/DefaultPolicy/Resource
+  ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityLifecycleHookDrainHookE5851888:
+    Type: AWS::AutoScaling::LifecycleHook
+    Properties:
+      AutoScalingGroupName:
+        Ref: ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityASGA00567D8
+      LifecycleTransition: autoscaling:EC2_INSTANCE_TERMINATING
+      DefaultResult: CONTINUE
+      HeartbeatTimeout: 300
+      NotificationTargetARN:
+        Ref: ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityLifecycleHookDrainHookTopic95703AFB
+      RoleARN:
+        Fn::GetAtt:
+          - ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityLifecycleHookDrainHookRole4482260D
+          - Arn
+    DependsOn:
+      - ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityLifecycleHookDrainHookRoleDefaultPolicyDDEF63CC
+      - ECSClusterArmadaInfrastructureStackDefaultAutoScalingGroupCapacityLifecycleHookDrainHookRole4482260D
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/ECSCluster-ArmadaInfrastructureStack/DefaultAutoScalingGroupCapacity/LifecycleHookDrainHook/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/2VSy27CMBD8lt6NW1DFHUUqReIQJYhr5TgbuuB4Iz+KkJV/r2MCSdWTZ2bXmdmNV/x9zd9exNUuZH1ZKKx4KJ2QFxalrwByxcOxkyxr9DHPWO4rhbL0lQY3aBMqyDs4iErBpE/axlqSKBySfjYPYKcdmNi5FQ6u4jbajGzjYpDvFrRjJUhv0N22hnyXDOZCz0AaHgroyKIjk74zsaFseciUt9FtqI2wZ8I7slIo1CceNpGUd/L02Quv5XdGusGTN88B/rXusQF5kwo+iS7p4lzoGYo2BqT7dtKZU9xkSjqhnbZOaAm5oQYV9EyJtqoFDx8xxcN7jnMwLVobWc+sjkPGxVtpsHs0/OEH6jD9ygT6nhVgyRuZQuXCiBbGBc0LcfgaXbLQVAM/29ef5Zovh3dztogL47XDFnhxP38B6HfAAFMCAAA=
+    Metadata:
+      aws:cdk:path: ArmadaInfrastructureStack/CDKMetadata/Default
+    Condition: CDKMetadataAvailable
+Parameters:
+  SsmParameterValueawsserviceecsoptimizedamiamazonlinux2recommendedimageidC96584B6F00A464EAD1953AFF4B05118Parameter:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+Conditions:
+  CDKMetadataAvailable:
+    Fn::Or:
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - af-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-northwest-1
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - sa-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-2
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-2
+Rules:
+  CheckBootstrapVersion:
+    Assertions:
+      - Assert:
+          Fn::Not:
+            - Fn::Contains:
+                - - "1"
+                  - "2"
+                  - "3"
+                  - "4"
+                  - "5"
+                - Ref: BootstrapVersion
+        AssertDescription: CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.
+

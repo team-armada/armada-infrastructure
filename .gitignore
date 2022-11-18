@@ -15,7 +15,7 @@ cdk.context.json
 # Package Lock
 package-lock.json
 
-# Env Files
-.env
-
 notes.md
+
+# Environmental Variables
+.env
