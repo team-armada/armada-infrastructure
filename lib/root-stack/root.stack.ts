@@ -9,6 +9,7 @@ import { ClusterStack } from '../load-balanced-ecs-cluster/cluster.stack';
 import { EFSStack } from "../efs/efs.stack"; 
 import { RDSStack } from "../rds/rds.stack"; 
 import { AdminNodeStack } from "../rds/admin-node.stack"; 
+import { ArmadaAppStack } from '../armada-app/armada-app.stack';
 
 export interface ArmadaRootStackProps extends cdk.StackProps {
   accessKeyId: string | undefined;
@@ -55,6 +56,8 @@ export class ArmadaRootStack extends cdk.Stack {
 
     database.addDependency(infra); 
 
+    // Admin Node 
+    // NOTE: Could justify by using as bastion host?
     const adminNode = new AdminNodeStack(this, "Admin-Node-EC2", {
       description: "EC2 instance used for RDS post-installation", 
       vpc: infra.vpc, 
@@ -64,6 +67,13 @@ export class ArmadaRootStack extends cdk.Stack {
     });
 
     adminNode.addDependency(database); 
+
+    // Armada Application - ECS Service 
+    const armadaApp = new ArmadaAppStack(this, "Armada-App-Stack", {
+      vpc: infra.vpc
+    })
+
+    armadaApp.addDependency(adminNode); 
 
   }
 }
