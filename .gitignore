@@ -17,3 +17,5 @@ package-lock.json
 
 # Env Files
 .env
+
+notes.md
