@@ -1,24 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
-
-import * as ecs from 'aws-cdk-lib/aws-ecs';
-import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
-import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-
-import * as path from 'path';
-import * as efs from 'aws-cdk-lib/aws-efs';
-import * as iam from 'aws-cdk-lib/aws-iam';
-import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as rds from 'aws-cdk-lib/aws-rds';
-import * as secretsManager from 'aws-cdk-lib/aws-secretsmanager';
-import * as tasks from 'aws-cdk-lib/aws-stepfunctions-tasks';
-import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
-import * as ssm from 'aws-cdk-lib/aws-ssm';
-import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
-import { readFileSync } from 'fs';
-import { PolicyDocument } from 'aws-cdk-lib/aws-iam';
 
 export interface CognitoStackProps extends cdk.NestedStackProps {}
 
