@@ -13,7 +13,7 @@ import { ArmadaAppStack } from '../armada-app/armada-app.stack';
 
 export interface ArmadaRootStackProps extends cdk.StackProps {
   accessKeyId: string | undefined;
-  secretAccessKeyId: string | undefined;
+  secretAccessKey: string | undefined;
   region: string | undefined;
   availabilityZone: string | undefined;
   keyPairName: string | undefined;
@@ -68,9 +68,19 @@ export class ArmadaRootStack extends cdk.Stack {
 
     adminNode.addDependency(database); 
 
+    // Cognito 
+
     // Armada Application - ECS Service 
     const armadaApp = new ArmadaAppStack(this, "Armada-App-Stack", {
-      vpc: infra.vpc
+      vpc: infra.vpc,
+      region: props.region,
+      accessKeyId: props.accessKeyId,
+      secretAccessKey: props.secretAccessKey,
+      // databaseCredentialSecret 
+      // dbInstance ref 
+      // cognito ref 
+      // ecs cluster ref 
+      // alb 
     })
 
     armadaApp.addDependency(adminNode); 

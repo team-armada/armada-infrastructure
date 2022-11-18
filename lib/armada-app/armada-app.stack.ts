@@ -4,28 +4,36 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as efs from 'aws-cdk-lib/aws-efs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as tasks from 'aws-cdk-lib/aws-stepfunctions-tasks';
+import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
+import { ManagedPolicies } from '../../utils/policies';
 
 
 import * as path from 'path';
-import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
-import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as secretsManager from 'aws-cdk-lib/aws-secretsmanager';
-import * as tasks from 'aws-cdk-lib/aws-stepfunctions-tasks';
-import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import { CfnParameter, Duration } from 'aws-cdk-lib';
 import { readFileSync } from 'fs';
-import { PolicyDocument } from 'aws-cdk-lib/aws-iam';
 
 
 
 
 export interface ArmadaAppStackProps extends cdk.NestedStackProps {
   readonly vpc: ec2.Vpc; 
+  readonly region: string | undefined;
+  readonly accessKeyId: string | undefined;
+  readonly secretAccessKey: string | undefined;
+  // databaseCredentialSecret 
+  // dbInstance ref 
+  // cognito ref 
+  // ecs cluster ref 
+  // alb 
 }
 
 
@@ -45,7 +53,7 @@ export class ArmadaAppStack extends cdk.NestedStack {
     }
 
 
-    const ECSPolicies = new PolicyDocument({
+    const ECSPolicies = new iam.PolicyDocument({
       statements: [
         // Give ECS Full Access to RDS, Cognito, ECS, EFS, Lambda, Elastic Load Balancing, EC2
         new iam.PolicyStatement({
@@ -86,17 +94,19 @@ export class ArmadaAppStack extends cdk.NestedStack {
         assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
         managedPolicies: [
           iam.ManagedPolicy.fromAwsManagedPolicyName(
-            'service-role/AmazonECSTaskExecutionRolePolicy'
-          ),
+            ManagedPolicies.AmazonECSTaskExecutionRolePolicy
+          )
         ],
       }),
       taskRole: new iam.Role(this, 'TaskRole', {
         assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
         managedPolicies: [
           iam.ManagedPolicy.fromAwsManagedPolicyName(
-            'service-role/AmazonECSTaskExecutionRolePolicy'
+            ManagedPolicies.AmazonECSTaskExecutionRolePolicy
           ),
-          iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess'),
+          iam.ManagedPolicy.fromAwsManagedPolicyName(
+            ManagedPolicies.AdministratorAccess
+          ),
         ],
         inlinePolicies: {
           ECSPolicies,
@@ -117,9 +127,9 @@ export class ArmadaAppStack extends cdk.NestedStack {
         },
       ],
       environment: {
-        AWS_REGION: props.region,
-        AWS_IAM_ACCESS_KEY_ID: props.accessKeyId,
-        AWS_IAM_SECRET_ACCESS_KEY: props.secretAccessKeyId,
+        AWS_REGION: props.region as string,
+        AWS_IAM_ACCESS_KEY_ID: props.accessKeyId as string,
+        AWS_IAM_SECRET_ACCESS_KEY: props.secretAccessKey as string,
         DATABASE_URL: `postgresql://postgres:${databaseCredentialsSecret
           .secretValueFromJson('password')
           .unsafeUnwrap()}@${dbInstance.dbInstanceEndpointAddress}:${
@@ -147,6 +157,23 @@ export class ArmadaAppStack extends cdk.NestedStack {
 
     armadaAppNginx.addLink(armadaApp);
 
+    // Instantiate an Amazon ECS Service
+    const ecsService = new ecs.Ec2Service(this, 'Service', {
+      cluster,
+      serviceName: 'ArmadaAdminApp',
+      taskDefinition,
+    });
+
+    // run task
+    const runTask = new tasks.EcsRunTask(this, 'Run', {
+      integrationPattern: sfn.IntegrationPattern.RUN_JOB,
+      cluster,
+      taskDefinition,
+      launchTarget: new tasks.EcsEc2LaunchTarget({
+        placementStrategies: [ecs.PlacementStrategy.spreadAcrossInstances()],
+      }),
+    });
+
     const armadaAppTargetGroup = new elbv2.ApplicationTargetGroup(
       this,
       'ArmadaApp',
@@ -162,7 +189,7 @@ export class ArmadaAppStack extends cdk.NestedStack {
             containerPort: 80,
           }),
         ],
-        vpc,
+        vpc: props.vpc,
       }
     );
 
