@@ -24,13 +24,16 @@ export interface CognitoStackProps extends cdk.NestedStackProps {}
 
 
 export class CognitoStack extends cdk.NestedStack {
+  public cognitoUserPool: cognito.UserPool; 
+  public cognitoClient: cognito.UserPoolClient; 
+
 
   constructor(scope: Construct, id: string, props?: CognitoStackProps) {
     super(scope, id, props); 
 
     // ATTENTION: Cognito user pools are immutable
     // once a user pool has been created it cannot be changed.
-    const cognitoUserPool = new cognito.UserPool(this, 'Cognito-User-Pool', {
+    this.cognitoUserPool = new cognito.UserPool(this, 'Cognito-User-Pool', {
       userPoolName: 'Cognito-User-Pool',
       signInCaseSensitive: false,
       // users are allowed to sign up
@@ -113,11 +116,11 @@ export class CognitoStack extends cdk.NestedStack {
     });
 
     // Cognito App Client
-    const cognitoClient = cognitoUserPool.addClient('Cognito-App-Client');
+    this.cognitoClient = this.cognitoUserPool.addClient('Cognito-App-Client');
 
     // Add a default admin user.
     new cognito.CfnUserPoolUser(this, 'MyCfnUserPoolUser', {
-      userPoolId: cognitoUserPool.userPoolId,
+      userPoolId: this.cognitoUserPool.userPoolId,
 
       // the properties below are optional
       userAttributes: [
@@ -131,11 +134,11 @@ export class CognitoStack extends cdk.NestedStack {
 
     // Outputs
     new cdk.CfnOutput(this, 'userPoolId', {
-      value: cognitoUserPool.userPoolId,
+      value: this.cognitoUserPool.userPoolId,
     });
 
     new cdk.CfnOutput(this, 'userPoolClientId', {
-      value: cognitoClient.userPoolClientId,
+      value: this.cognitoClient.userPoolClientId,
     });
 
   }

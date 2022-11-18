@@ -8,13 +8,14 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as tasks from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
+import * as secretsManager from 'aws-cdk-lib/aws-secretsmanager';
+
 import { ManagedPolicies } from '../../utils/policies';
 
 
 import * as path from 'path';
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as rds from 'aws-cdk-lib/aws-rds';
-import * as secretsManager from 'aws-cdk-lib/aws-secretsmanager';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
@@ -29,11 +30,12 @@ export interface ArmadaAppStackProps extends cdk.NestedStackProps {
   readonly region: string | undefined;
   readonly accessKeyId: string | undefined;
   readonly secretAccessKey: string | undefined;
-  // databaseCredentialSecret 
-  // dbInstance ref 
-  // cognito ref 
-  // ecs cluster ref 
-  // alb 
+  readonly databaseCredentialsSecret: secretsManager.Secret; 
+  readonly dbInstance: rds.DatabaseInstance; 
+  readonly cognitoUserPool: cognito.UserPool; 
+  readonly cognitoClient: cognito.UserPoolClient; 
+  readonly cluster: ecs.Cluster; 
+  readonly alb: elbv2.ApplicationLoadBalancer; 
 }
 
 
@@ -51,6 +53,28 @@ export class ArmadaAppStack extends cdk.NestedStack {
     if (!props?.vpc) {
       throw new Error('Please provide a reference to the vpc')
     }
+
+    if (!props?.region) {
+      throw new Error('Please provide a reference to the vpc')
+    }
+
+    if (!props?.accessKeyId) {
+      throw new Error('Please provide a reference to the vpc')
+    }
+
+    if (!props?.secretAccessKey) {
+      throw new Error('Please provide a reference to the vpc')
+    }
+
+    if (!props?.databaseCredentialsSecret) {
+      throw new Error('Please provide a reference to the vpc')
+    }
+
+    if (!props?.dbInstance) {
+      throw new Error('Please provide a reference to the vpc')
+    }
+
+    
 
 
     const ECSPolicies = new iam.PolicyDocument({
@@ -127,17 +151,17 @@ export class ArmadaAppStack extends cdk.NestedStack {
         },
       ],
       environment: {
-        AWS_REGION: props.region as string,
-        AWS_IAM_ACCESS_KEY_ID: props.accessKeyId as string,
-        AWS_IAM_SECRET_ACCESS_KEY: props.secretAccessKey as string,
-        DATABASE_URL: `postgresql://postgres:${databaseCredentialsSecret
+        AWS_REGION: props.region,
+        AWS_IAM_ACCESS_KEY_ID: props.accessKeyId,
+        AWS_IAM_SECRET_ACCESS_KEY: props.secretAccessKey,
+        DATABASE_URL: `postgresql://postgres:${props.databaseCredentialsSecret
           .secretValueFromJson('password')
-          .unsafeUnwrap()}@${dbInstance.dbInstanceEndpointAddress}:${
-          dbInstance.dbInstanceEndpointPort
+          .unsafeUnwrap()}@${props.dbInstance.dbInstanceEndpointAddress}:${
+          props.dbInstance.dbInstanceEndpointPort
         }/Armada?schema=public`,
         PORT: '3000',
-        USER_POOL_ID: cognitoUserPool.userPoolId,
-        USER_POOL_WEB_CLIENT_ID: cognitoClient.userPoolClientId,
+        USER_POOL_ID: props.cognitoUserPool.userPoolId,
+        USER_POOL_WEB_CLIENT_ID: props.cognitoClient.userPoolClientId,
       },
     });
 
@@ -159,7 +183,7 @@ export class ArmadaAppStack extends cdk.NestedStack {
 
     // Instantiate an Amazon ECS Service
     const ecsService = new ecs.Ec2Service(this, 'Service', {
-      cluster,
+      cluster: props.cluster,
       serviceName: 'ArmadaAdminApp',
       taskDefinition,
     });
@@ -167,7 +191,7 @@ export class ArmadaAppStack extends cdk.NestedStack {
     // run task
     const runTask = new tasks.EcsRunTask(this, 'Run', {
       integrationPattern: sfn.IntegrationPattern.RUN_JOB,
-      cluster,
+      cluster: props.cluster,
       taskDefinition,
       launchTarget: new tasks.EcsEc2LaunchTarget({
         placementStrategies: [ecs.PlacementStrategy.spreadAcrossInstances()],
@@ -193,7 +217,7 @@ export class ArmadaAppStack extends cdk.NestedStack {
       }
     );
 
-    const listener = alb.addListener('ALB-Listener', {
+    const listener = props.alb.addListener('ALB-Listener', {
       port: 80, // listens for requests on port 80
       open: true, // Allow CDK to automatically create security group rule to allow traffic on port 80
 

@@ -74,19 +74,20 @@ export class ArmadaRootStack extends cdk.Stack {
     cognitoStack.addDependency(infra)
 
     // Armada Application - ECS Service 
-    // const armadaApp = new ArmadaAppStack(this, "Armada-App-Stack", {
-    //   vpc: infra.vpc,
-    //   region: props.region,
-    //   accessKeyId: props.accessKeyId,
-    //   secretAccessKey: props.secretAccessKey,
-    //   // databaseCredentialSecret 
-    //   // dbInstance ref 
-    //   // cognito ref 
-    //   // ecs cluster ref 
-    //   // alb 
-    // })
+    const armadaApp = new ArmadaAppStack(this, "Armada-App-Stack", {
+      vpc: infra.vpc,
+      region: props.region,
+      accessKeyId: props.accessKeyId,
+      secretAccessKey: props.secretAccessKey,
+      databaseCredentialsSecret: database.databaseCredentialsSecret, 
+      dbInstance: database.rds,
+      cognitoUserPool: cognitoStack.cognitoUserPool,
+      cognitoClient: cognitoStack.cognitoClient,
+      cluster: cluster.ecs,
+      alb: cluster.alb
+    })
 
-    // armadaApp.addDependency(adminNode); 
+    armadaApp.addDependency(cognitoStack); 
 
   }
 }

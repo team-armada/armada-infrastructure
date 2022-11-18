@@ -13,6 +13,7 @@ export interface RDSStackProps extends cdk.NestedStackProps {
 
 export class RDSStack extends cdk.NestedStack {
   public rds: rds.DatabaseInstance;
+  public databaseCredentialsSecret: secretsManager.Secret;
 
   constructor(scope: Construct, id: string, props?: RDSStackProps) {
     super(scope, id, props); 
@@ -36,9 +37,7 @@ export class RDSStack extends cdk.NestedStack {
     
 
     // secret to be used as credentials for our database
-    const databaseCredentialsSecret = new secretsManager.Secret(
-      this,
-      `database-DBCredentialsSecret`,
+    this.databaseCredentialsSecret = new secretsManager.Secret(this, "DB-Credential-Secret",
       {
         secretName: `database-credentials`,
         generateSecretString: {
@@ -55,7 +54,7 @@ export class RDSStack extends cdk.NestedStack {
     // next, create a new string parameter to be used
     new ssm.StringParameter(this, 'DBCredentialsArn', {
       parameterName: `database-credentials-arn`,
-      stringValue: databaseCredentialsSecret.secretArn,
+      stringValue: this.databaseCredentialsSecret.secretArn,
     });
 
     const engine = rds.DatabaseInstanceEngine.postgres({
@@ -85,7 +84,7 @@ export class RDSStack extends cdk.NestedStack {
       deletionProtection: false,
       databaseName: 'PostgresDatabase',
       publiclyAccessible: false,
-      credentials: rds.Credentials.fromSecret(databaseCredentialsSecret),
+      credentials: rds.Credentials.fromSecret(this.databaseCredentialsSecret),
     });
   }
 
