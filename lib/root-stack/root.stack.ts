@@ -57,7 +57,8 @@ export class ArmadaRootStack extends cdk.Stack {
       cognitoClient: cognitoStack.cognitoClient,
     }); 
 
-    cluster.addDependency(infra); 
+    cluster.addDependency(database); 
+    cluster.addDependency(cognitoStack); 
 
     // File System 
     const fileSystem = new EFSStack(this, "Elastic-File-System", {
