@@ -9,7 +9,6 @@ import { ClusterStack } from '../load-balanced-ecs-cluster/cluster.stack';
 import { EFSStack } from "../efs/efs.stack"; 
 import { RDSStack } from "../rds/rds.stack"; 
 import { AdminNodeStack } from "../rds/admin-node.stack"; 
-import { ArmadaAppStack } from '../armada-app/armada-app.stack';
 import { CognitoStack } from "../cognito/cognito.stack"
 
 export interface ArmadaRootStackProps extends cdk.StackProps {
@@ -31,11 +30,31 @@ export class ArmadaRootStack extends cdk.Stack {
       description: "VPC and Security Group Stack"
     }); 
 
+    // Database 
+    const database = new RDSStack(this, "RDS-Stack", {
+      description: "RDS PostgreSQL Database", 
+      vpc: infra.vpc,
+      availabilityZone: props.availabilityZone as string
+    }); 
+
+    database.addDependency(infra); 
+
+    // Cognito 
+    const cognitoStack = new CognitoStack(this, "Cognito-Stack")
+    cognitoStack.addDependency(infra)
+
     // Armada Cluster 
     const cluster = new ClusterStack(this, "Load-Balanced-Cluster", {
       description: "ECS cluster, application load balancer and auto-scaling group",
       vpc: infra.vpc,
       keyPairName: props.keyPairName,
+      region: props.region,
+      accessKeyId: props.accessKeyId,
+      secretAccessKey: props.secretAccessKey,
+      databaseCredentialsSecret: database.databaseCredentialsSecret, 
+      dbInstance: database.rds,
+      cognitoUserPool: cognitoStack.cognitoUserPool,
+      cognitoClient: cognitoStack.cognitoClient,
     }); 
 
     cluster.addDependency(infra); 
@@ -48,14 +67,7 @@ export class ArmadaRootStack extends cdk.Stack {
 
     fileSystem.addDependency(infra); 
 
-    // Database 
-    const database = new RDSStack(this, "RDS-Stack", {
-      description: "RDS PostgreSQL Database", 
-      vpc: infra.vpc,
-      availabilityZone: props.availabilityZone as string
-    }); 
 
-    database.addDependency(infra); 
 
     // Admin Node 
     // NOTE: Could justify by using as bastion host?
@@ -68,26 +80,5 @@ export class ArmadaRootStack extends cdk.Stack {
     });
 
     adminNode.addDependency(database); 
-
-    // Cognito 
-    const cognitoStack = new CognitoStack(this, "Cognito-Stack")
-    cognitoStack.addDependency(infra)
-
-    // Armada Application - ECS Service 
-    const armadaApp = new ArmadaAppStack(this, "Armada-App-Stack", {
-      vpc: infra.vpc,
-      region: props.region,
-      accessKeyId: props.accessKeyId,
-      secretAccessKey: props.secretAccessKey,
-      databaseCredentialsSecret: database.databaseCredentialsSecret, 
-      dbInstance: database.rds,
-      cognitoUserPool: cognitoStack.cognitoUserPool,
-      cognitoClient: cognitoStack.cognitoClient,
-      cluster: cluster.ecs,
-      alb: cluster.alb
-    })
-
-    armadaApp.addDependency(cognitoStack); 
-
   }
 }

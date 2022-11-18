@@ -1,15 +1,28 @@
-import { Construct } from 'constructs'; 
 import * as cdk from 'aws-cdk-lib';
+import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
-import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as tasks from 'aws-cdk-lib/aws-stepfunctions-tasks';
+import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
+import * as secretsManager from 'aws-cdk-lib/aws-secretsmanager';
+import * as rds from 'aws-cdk-lib/aws-rds';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
+import { ManagedPolicies } from '../../utils/policies';
+import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 
 export interface ClusterStackProps extends cdk.NestedStackProps {
   readonly vpc: ec2.Vpc; 
   readonly keyPairName: string | undefined; 
+  readonly region: string | undefined;
+  readonly accessKeyId: string | undefined;
+  readonly secretAccessKey: string | undefined;
+  readonly databaseCredentialsSecret: secretsManager.Secret; 
+  readonly dbInstance: rds.DatabaseInstance; 
+  readonly cognitoUserPool: cognito.UserPool; 
+  readonly cognitoClient: cognito.UserPoolClient; 
 }
 
 
@@ -24,6 +37,18 @@ export class ClusterStack extends cdk.NestedStack {
     // Validation 
     if (!props?.vpc) {
       throw new Error('Please provide a reference to the vpc')
+    }
+
+    if (!props?.region) {
+      throw new Error('Please provide a region')
+    }
+
+    if (!props?.accessKeyId) {
+      throw new Error('Please provide the access key id')
+    }
+
+    if (!props?.secretAccessKey) {
+      throw new Error('Please provide the secret access key')
     }
 
     // Application Load Balancer Security Groups
@@ -135,9 +160,7 @@ export class ClusterStack extends cdk.NestedStack {
     // A capacity provider is an abstraction that uses an ASG underneath
     // It's a way to make your ECS cluster "ASG-aware". Think ASG adapter for ECS
     // ECS capacity provider
-    const capacityProvider = new ecs.AsgCapacityProvider(
-      this,
-      'ASG-Capacity-Provider',
+    const capacityProvider = new ecs.AsgCapacityProvider(this, 'ASG-Capacity-Provider',
       {
         capacityProviderName: 'ASG-Capacity-Provider',
         // manage cluster scaling using ASG strategy
@@ -154,5 +177,163 @@ export class ClusterStack extends cdk.NestedStack {
 
     // Attach Security group to ECS cluster
     this.ecs.addAsgCapacityProvider(capacityProvider);
+
+
+
+    // Armada App 
+    const ECSPolicies = new iam.PolicyDocument({
+      statements: [
+        // Give ECS Full Access to RDS, Cognito, ECS, EFS, Lambda, Elastic Load Balancing, EC2
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'rds:*',
+            'cognito-idp:*',
+            'cognito-identity:*',
+            'cognito-sync:*',
+            'ecs:*',
+            'lambda:*',
+            'elasticloadbalancing:*',
+            'ec2:*',
+            'efs:*',
+          ],
+          resources: ['*'],
+        }),
+
+        // Give ECS Tasks Administrator Access
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['iam:PassRole'],
+          resources: ['*'],
+        }),
+
+        // Allow ECS Tasks to Assume a Role
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['sts:AssumeRole'],
+          resources: ['*'],
+        }),
+      ],
+    });
+
+
+    const taskDefinition = new ecs.Ec2TaskDefinition(this, 'Armada-App', {
+      executionRole: new iam.Role(this, 'TaskExecutionRole', {
+        assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
+        managedPolicies: [
+          iam.ManagedPolicy.fromAwsManagedPolicyName(
+            ManagedPolicies.AmazonECSTaskExecutionRolePolicy
+          )
+        ],
+      }),
+      taskRole: new iam.Role(this, 'TaskRole', {
+        assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
+        managedPolicies: [
+          iam.ManagedPolicy.fromAwsManagedPolicyName(
+            ManagedPolicies.AmazonECSTaskExecutionRolePolicy
+          ),
+          iam.ManagedPolicy.fromAwsManagedPolicyName(
+            ManagedPolicies.AdministratorAccess
+          ),
+        ],
+        inlinePolicies: {
+          ECSPolicies,
+        },
+      }),
+    });
+
+
+    const armadaApp = taskDefinition.addContainer('armada-app', {
+      image: ecs.ContainerImage.fromRegistry('jdguillaume/armada-application'),
+      memoryLimitMiB: 512,
+      essential: true,
+      portMappings: [
+        {
+          hostPort: 0,
+          containerPort: 5432,
+          protocol: ecs.Protocol.TCP,
+        },
+      ],
+      environment: {
+        AWS_REGION: props.region,
+        AWS_IAM_ACCESS_KEY_ID: props.accessKeyId,
+        AWS_IAM_SECRET_ACCESS_KEY: props.secretAccessKey,
+        DATABASE_URL: `postgresql://postgres:${props.databaseCredentialsSecret
+          .secretValueFromJson('password')
+          .unsafeUnwrap()}@${props.dbInstance.dbInstanceEndpointAddress}:${
+          props.dbInstance.dbInstanceEndpointPort
+        }/Armada?schema=public`,
+        PORT: '3000',
+        USER_POOL_ID: props.cognitoUserPool.userPoolId,
+        USER_POOL_WEB_CLIENT_ID: props.cognitoClient.userPoolClientId,
+      },
+    });
+
+
+    const armadaAppNginx = taskDefinition.addContainer('armada-app-nginx', {
+      image: ecs.ContainerImage.fromRegistry('jdguillaume/armada-app-nginx'),
+      memoryLimitMiB: 256,
+      essential: true,
+      portMappings: [
+        {
+          hostPort: 0,
+          containerPort: 80,
+          protocol: ecs.Protocol.TCP,
+        },
+      ],
+    });
+
+    armadaAppNginx.addLink(armadaApp);
+
+    // Instantiate an Amazon ECS Service
+    const ecsService = new ecs.Ec2Service(this, 'Service', {
+      cluster: this.ecs,
+      serviceName: 'ArmadaAdminApp',
+      taskDefinition,
+    });
+
+    // run task
+    const runTask = new tasks.EcsRunTask(this, 'Run', {
+      integrationPattern: sfn.IntegrationPattern.RUN_JOB,
+      cluster: this.ecs,
+      taskDefinition,
+      launchTarget: new tasks.EcsEc2LaunchTarget({
+        placementStrategies: [
+          ecs.PlacementStrategy.spreadAcrossInstances()
+        ],
+      }),
+    });
+
+    const armadaAppTargetGroup = new elbv2.ApplicationTargetGroup(this, 'ArmadaApp',
+      {
+        healthCheck: {
+          path: '/',
+        },
+        port: 80,
+        protocol: elbv2.ApplicationProtocol.HTTP,
+        targets: [
+          ecsService.loadBalancerTarget({
+            containerName: 'armada-app-nginx',
+            containerPort: 80,
+          }),
+        ],
+        vpc: props.vpc,
+      }
+    );
+
+    // Listener 
+    this.alb.addListener('ALB-Listener', {
+      port: 80, // listens for requests on port 80
+      open: true, // Allow CDK to automatically create security group rule to allow traffic on port 80
+
+      protocol: elbv2.ApplicationProtocol.HTTP,
+
+      // Specify the default action for the ALB's Listener on Port 80
+      defaultAction: elbv2.ListenerAction.forward([
+        armadaAppTargetGroup
+      ]),
+    });
+
+
   }
 }
