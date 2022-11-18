@@ -7,7 +7,7 @@ export const validateEnvVars = (props: ArmadaRootStackProps) => {
     );
   }
 
-  if (!props?.secretAccessKeyId) {
+  if (!props?.secretAccessKey) {
     throw new Error(
       'Please set your secret key in the environmental variables using: AWS_SECRET_ACCESS_KEY.'
     );
