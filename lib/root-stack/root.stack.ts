@@ -58,7 +58,9 @@ export class ArmadaRootStack extends cdk.Stack {
     const adminNode = new AdminNodeStack(this, "Admin-Node-EC2", {
       description: "EC2 instance used for RDS post-installation", 
       vpc: infra.vpc, 
-      region: props.region
+      region: props.region,
+      keyPairName: props.keyPairName, 
+      availabilityZone: props.availabilityZone
     });
 
     adminNode.addDependency(database); 

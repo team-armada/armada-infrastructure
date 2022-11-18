@@ -4,5 +4,7 @@ export enum ManagedPolicies {
   AmazonCognitoPowerUser = 'AmazonCognitoPowerUser',
   AWSLambdaVPCAccessExecutionRole = "service-role/AWSLambdaVPCAccessExecutionRole",
   AmazonElasticFileSystemClientFullAccess = "AmazonElasticFileSystemClientFullAccess",
+  AmazonECSTaskExecutionRolePolicy = "service-role/AmazonECSTaskExecutionRolePolicy",
+  AdministratorAccess = "AdministratorAccess"
 }
 

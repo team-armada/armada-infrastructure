@@ -1,27 +1,15 @@
-import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import { readFileSync } from 'fs';
-
-import * as rds from 'aws-cdk-lib/aws-rds';
+import * as fs from 'fs';
 import * as path from 'path';
-import * as ecs from 'aws-cdk-lib/aws-ecs';
-import * as efs from 'aws-cdk-lib/aws-efs';
-import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
-import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as secretsManager from 'aws-cdk-lib/aws-secretsmanager';
-import * as tasks from 'aws-cdk-lib/aws-stepfunctions-tasks';
-import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
-import * as ssm from 'aws-cdk-lib/aws-ssm';
-import * as cognito from 'aws-cdk-lib/aws-cognito';
-import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
-import { CfnParameter, Duration } from 'aws-cdk-lib';
-import { PolicyDocument } from 'aws-cdk-lib/aws-iam';
 
 import { ManagedPolicies } from '../../utils/policies';
-const userDataScript = readFileSync('./user-data.sh', 'utf8');
+
+// User data script 
+const scriptPath = path.join(__dirname, "./user-data.sh"); 
+const userDataScript = fs.readFileSync(scriptPath, 'utf8');
 
 export interface AdminNodeStackProps extends cdk.NestedStackProps {
   readonly vpc: ec2.Vpc; 
@@ -37,6 +25,18 @@ export class AdminNodeStack extends cdk.NestedStack {
 
     if (!props?.vpc) {
       throw new Error('Please provide a reference to the vpc');
+    }
+
+    if (!props?.region) {
+      throw new Error('Please provide the region');
+    }
+
+    if (!props?.keyPairName) {
+      throw new Error('Please provide a key pair name');
+    }
+
+    if (!props?.availabilityZone) {
+      throw new Error('Please provide an availability zone');
     }
 
     // AdminNode Security Group
@@ -70,7 +70,6 @@ export class AdminNodeStack extends cdk.NestedStack {
       ],
     });
 
-    
 
     const adminNode = new ec2.Instance(this, 'Armada-AdminNode', {
       vpc: props.vpc,

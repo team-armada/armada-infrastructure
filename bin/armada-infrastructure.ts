@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { ArmadaRootStack } from "../lib/armada-root-stack/root.stack"; 
+import { ArmadaRootStack } from "../lib/root-stack/root.stack"; 
 
 const app = new cdk.App();
 
