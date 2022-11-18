@@ -10,6 +10,7 @@ import { EFSStack } from "../efs/efs.stack";
 import { RDSStack } from "../rds/rds.stack"; 
 import { AdminNodeStack } from "../rds/admin-node.stack"; 
 import { ArmadaAppStack } from '../armada-app/armada-app.stack';
+import { CognitoStack } from "../cognito/cognito.stack"
 
 export interface ArmadaRootStackProps extends cdk.StackProps {
   accessKeyId: string | undefined;
@@ -69,21 +70,23 @@ export class ArmadaRootStack extends cdk.Stack {
     adminNode.addDependency(database); 
 
     // Cognito 
+    const cognitoStack = new CognitoStack(this, "Cognito-Stack")
+    cognitoStack.addDependency(infra)
 
     // Armada Application - ECS Service 
-    const armadaApp = new ArmadaAppStack(this, "Armada-App-Stack", {
-      vpc: infra.vpc,
-      region: props.region,
-      accessKeyId: props.accessKeyId,
-      secretAccessKey: props.secretAccessKey,
-      // databaseCredentialSecret 
-      // dbInstance ref 
-      // cognito ref 
-      // ecs cluster ref 
-      // alb 
-    })
+    // const armadaApp = new ArmadaAppStack(this, "Armada-App-Stack", {
+    //   vpc: infra.vpc,
+    //   region: props.region,
+    //   accessKeyId: props.accessKeyId,
+    //   secretAccessKey: props.secretAccessKey,
+    //   // databaseCredentialSecret 
+    //   // dbInstance ref 
+    //   // cognito ref 
+    //   // ecs cluster ref 
+    //   // alb 
+    // })
 
-    armadaApp.addDependency(adminNode); 
+    // armadaApp.addDependency(adminNode); 
 
   }
 }
