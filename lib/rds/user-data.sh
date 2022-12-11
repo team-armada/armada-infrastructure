@@ -41,3 +41,6 @@ cd /home/ec2-user/rds-post-installation
 # set up psql connection and execute SQL script
 psql postgresql://$RDS_USER:$RDS_PASSWORD@$RDS_ENDPOINT:5432 < create_database.sql
 psql postgresql://$RDS_USER:$RDS_PASSWORD@$RDS_ENDPOINT:5432/Armada < schema.sql
+
+# power down initializing EC2 instance
+halt -p
