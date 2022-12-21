@@ -30,4 +30,10 @@ export const validateEnvVars = (props: ArmadaRootStackProps) => {
       'Please set a default key pair to be used with admin node that manages RDS using: ADMIN_NODE_KEY_PAIR_NAME.'
     );
   }
+
+  if (!props?.armadaEmail) {
+    throw new Error(
+      'Please add your email to the environment variable: ARMADA_EMAIL.'
+    );
+  }
 }; 

@@ -12,6 +12,7 @@ new ArmadaRootStack(app, "Armada-Root-Stack", {
   availabilityZone: process.env.AWS_AVAILABILITY_ZONE, // e.g. 'us-east-2a'
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  armadaEmail: process.env.ARMADA_EMAIL,
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
     region: process.env.CDK_DEFAULT_REGION,

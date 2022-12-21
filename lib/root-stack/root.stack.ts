@@ -17,6 +17,7 @@ export interface ArmadaRootStackProps extends cdk.StackProps {
   region: string | undefined;
   availabilityZone: string | undefined;
   keyPairName: string | undefined;
+  armadaEmail: string | undefined; 
 }
 
 export class ArmadaRootStack extends cdk.Stack {
@@ -40,7 +41,10 @@ export class ArmadaRootStack extends cdk.Stack {
     database.addDependency(infra); 
 
     // Cognito 
-    const cognitoStack = new CognitoStack(this, "Cognito-Stack")
+    const cognitoStack = new CognitoStack(this, "Cognito-Stack", {
+      armadaEmail: props.armadaEmail
+    })
+
     cognitoStack.addDependency(infra)
 
     // Armada Cluster 

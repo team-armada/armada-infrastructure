@@ -2,7 +2,9 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 
-export interface CognitoStackProps extends cdk.NestedStackProps {}
+export interface CognitoStackProps extends cdk.NestedStackProps {
+  armadaEmail: string | undefined; 
+}
 
 
 export class CognitoStack extends cdk.NestedStack {
@@ -12,6 +14,12 @@ export class CognitoStack extends cdk.NestedStack {
 
   constructor(scope: Construct, id: string, props?: CognitoStackProps) {
     super(scope, id, props); 
+
+    if (!props?.armadaEmail) {
+      throw new Error(
+        'Please add your email to the environment variable: ARMADA_EMAIL.'
+      );
+    }
 
     // ATTENTION: Cognito user pools are immutable
     // once a user pool has been created it cannot be changed.
@@ -94,7 +102,7 @@ export class CognitoStack extends cdk.NestedStack {
           'Hello {username}, you have been invited to join Armada! Your temporary password is {####}',
       },
 
-      email: cognito.UserPoolEmail.withCognito('support@releasethefleet.com'),
+      email: cognito.UserPoolEmail.withCognito(props.armadaEmail),
     });
 
     // Cognito App Client
@@ -109,7 +117,7 @@ export class CognitoStack extends cdk.NestedStack {
         { name: 'custom:isAdmin', value: `true` },
         { name: 'given_name', value: `Armada` },
         { name: 'family_name', value: `Admin` },
-        { name: 'email', value: `thefourofours@gmail.com` },
+        { name: 'email', value: props.armadaEmail },
       ],
       username: 'ArmadaAdmin',
     });
