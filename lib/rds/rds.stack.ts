@@ -75,7 +75,7 @@ export class RDSStack extends cdk.NestedStack {
       securityGroups: [rdsSecurityGroup],
       multiAz: false,
       allocatedStorage: 100,
-      maxAllocatedStorage: 105,
+      maxAllocatedStorage: 128,
       allowMajorVersionUpgrade: false,
       autoMinorVersionUpgrade: true,
       backupRetention: cdk.Duration.days(0),
